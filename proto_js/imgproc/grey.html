@@ -1,0 +1,70 @@
+<html>
+	<!-- 640*480 is fixed, be careful if a new image in different size -->
+	<canvas id="my_canvas" width=640 height=480></canvas><br><br>
+	<button onclick="process();">PROCESS!</button>
+
+<script type="text/javascript" src="img_src.js"></script>
+<script type="text/javascript">
+
+/*
+* (1) do preparition
+*/
+var canvas = document.getElementById('my_canvas');
+var ctx = canvas.getContext('2d');
+var width = 640;
+var height = 480;
+
+
+/*
+* (2) load your picture
+*/
+var source_image = new Image();
+source_image.crossOrigin = '';
+source_image.src = img_src;
+source_image.onload = function() {
+	drawImage(source_image, 0, 0);
+};
+source_image.onerror = function() {
+	alert("image load error!");
+};
+
+
+/*
+* Main processing function
+*/
+function process() {
+	var pixels = ctx.getImageData(0, 0, width, height);
+
+    /*===============================================================================*/
+	/* Our teacher said that all things are some "for" loop, here it is
+	 * Change the code below, with your knowledge from books.
+	*/
+	for(var i = 0; i < height * width * 4; i += 4) {
+
+		var r = pixels.data[i];
+		var g = pixels.data[i + 1];
+		var b = pixels.data[i + 2];
+
+		var grey = (r + g + b) / 3;
+
+		pixels.data[i] = grey;
+		pixels.data[i + 1] = grey;
+		pixels.data[i + 2] = grey;
+
+	}
+	/*=================================================================================*/
+
+	ctx.putImageData(pixels, 0, 0);
+}
+
+/*
+* Draw your image
+*/
+function drawImage(img, x, y) {
+	ctx.drawImage(img, x, y);
+}
+
+</script>
+
+
+</html>

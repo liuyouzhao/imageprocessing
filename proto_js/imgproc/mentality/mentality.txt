@@ -1,0 +1,10 @@
+Target:
+
+Get an object size by two-eye-camera
+
+1. Realtime graph cuts.
+2. Geometry objects extraction
+3. Geometry objects classification, tree construct
+4. 
+
+

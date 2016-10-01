@@ -1,0 +1,71 @@
+<html>
+	<!-- 640*480 is fixed, be careful if a new image in different size -->
+	<canvas id="my_canvas" width=640 height=480></canvas><br><br>
+	<button onclick="process();">PROCESS!</button>
+
+<script type="text/javascript" src="img_src.js"></script>
+<script type="text/javascript" src="src/utils.js"></script>
+<script type="text/javascript" src="src/grey.js"></script>
+<script type="text/javascript" src="src/binary.js"></script>
+<script type="text/javascript" src="src/gradient.js"></script>
+<script type="text/javascript" src="src/convolute.js"></script>
+<script type="text/javascript" src="src/watershed.js"></script>
+
+<script type="text/javascript" src="src/gauss.js"></script>
+<script type="text/javascript">
+
+/*
+* (1) do preparition
+*/
+var canvas = document.getElementById('my_canvas');
+var ctx = canvas.getContext('2d');
+var width = 640;
+var height = 480;
+
+
+/*
+* (2) load your picture
+*/
+var source_image = new Image();
+source_image.crossOrigin = '';
+source_image.src = img_src;
+source_image.onload = function() {
+	drawImage(source_image, 0, 0);
+};
+source_image.onerror = function() {
+	alert("image load error!");
+};
+
+/*
+* Main processing function
+*/
+function process() {
+	var pixels = ctx.getImageData(0, 0, width, height);
+	var p0 = grey.process(pixels.data, width, height);
+	p0 = gauss.process(p0, width, height, 5, 4);
+
+	//p0 = gauss.process(p0, width, height, 5, 4);
+	//p0 = gauss.process(p0, width, height, 5, 4);
+
+  	var p1 = gradient.process(p0, width, height);
+
+  	var p2 = binary.process(p1, width, height, 55);
+
+  	p2 = watershed.process(p2, width, height, 8);
+
+  	copyPixels(p2, pixels.data, width, height, 4);
+
+	ctx.putImageData(pixels, 0, 0);
+}
+
+/*
+* Draw your image
+*/
+function drawImage(img, x, y) {
+	ctx.drawImage(img, x, y);
+}
+
+</script>
+
+
+</html>

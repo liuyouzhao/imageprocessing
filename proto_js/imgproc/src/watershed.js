@@ -1,12 +1,12 @@
 var watershed = function() {}
 
-watershed.process = function(pixels, width, height, t) {
-	return __watershed_process(pixels, width, height, t);
+watershed.process = function(pixels, width, height, coreW, threadhold) {
+	return __watershed_process(pixels, width, height, coreW, threadhold);
 }
 /*
 * Main processing function
 */
-function __watershed_process(pixels, width, height, coreW) {
+function __watershed_process(pixels, width, height, coreW, threadhold) {
 
 	var resultPixels = [];
 
@@ -42,7 +42,12 @@ function __watershed_process(pixels, width, height, coreW) {
 
 	for(var i = 0; i < mw * mh; i ++) {
 		mapResult[i] = Math.floor(mapResult[i] / (coreW * coreW));
-
+		if(mapResult[i] >= threadhold) {
+			mapResult[i] = 255;
+		}
+		else {
+			mapResult[i] = 0;
+		}
 		var iy = Math.floor(i / mw);
 		var ix = i % mw;
 		for(var y = iy * coreW; y < iy * coreW + coreW; y ++) {
@@ -54,6 +59,8 @@ function __watershed_process(pixels, width, height, coreW) {
 				resultPixels[pid * 4 + 3] = pixels[pid * 4 + 3];
 			}
 		}
+
+		
 	}
 	
 	/*=================================================================================*/

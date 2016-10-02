@@ -9,6 +9,7 @@
 <script type="text/javascript" src="src/binary.js"></script>
 <script type="text/javascript" src="src/gradient.js"></script>
 <script type="text/javascript" src="src/convolute.js"></script>
+<script type="text/javascript" src="src/longedge.js"></script>
 <script type="text/javascript" src="src/watershed.js"></script>
 
 <script type="text/javascript" src="src/gauss.js"></script>
@@ -49,9 +50,10 @@ function process() {
 
   	var p1 = gradient.process(p0, width, height);
 
-  	var p2 = binary.process(p1, width, height, 55);
+  	var p2 = binary.process(p1, width, height, 65);
 
-  	p2 = watershed.process(p2, width, height, 8);
+  	var p2 = longedge.process(p2, width, height, 128);
+  	//p2 = watershed.process(p2, width, height, 2, 40);
 
   	copyPixels(p2, pixels.data, width, height, 4);
 

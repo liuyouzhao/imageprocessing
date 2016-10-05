@@ -5,7 +5,7 @@
 /*
 * Main processing function
 */
-static unsigned char* __binary_process(u8* p, u8* out, u32 w, u32 h, u8 t) {
+static unsigned char* __grey_process(u8* p, u8* out, u32 w, u32 h) {
 
     if(!p || !out) {
         return  NULL;
@@ -19,17 +19,15 @@ static unsigned char* __binary_process(u8* p, u8* out, u32 w, u32 h, u8 t) {
 		u8 b = p[i + 2];
 
 		u8 grey = (r + g + b) / 3;
-		grey = grey >= t ? 255 : 0;
 
 		out[i] = grey;
 		out[i + 1] = grey;
 		out[i + 2] = grey;
 
 	}
-
-	return out;
+    return out;
 }
 
-BinaryProc g_binary = {
-    .process = __binary_process
+GreyProc g_grey = {
+    .process = __grey_process
 };

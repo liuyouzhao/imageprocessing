@@ -6,9 +6,11 @@
 using namespace std;
 
 extern BinaryProc g_binary;
+extern LoneedgeProc g_longedge;
 
 int main()
 {
+
     IplImage* p_frame = NULL;
 
     CvCapture* p_capture = cvCreateCameraCapture(-1);
@@ -23,10 +25,16 @@ int main()
         }
 
         u8 *buf = (u8*)malloc(p_frame->width * p_frame->height * p_frame->nChannels);
+        memset(buf, p_frame->width * p_frame->height * p_frame->nChannels, 0);
 
         g_binary.process((u8*)p_frame->imageData, buf, p_frame->width, p_frame->height, 125);
-
         memcpy(p_frame->imageData, buf, p_frame->width * p_frame->height * p_frame->nChannels);
+        memset(buf, p_frame->width * p_frame->height * p_frame->nChannels, 0);
+
+
+        g_longedge.process((u8*)p_frame->imageData, buf, p_frame->width, p_frame->height, 65);
+        memcpy(p_frame->imageData, buf, p_frame->width * p_frame->height * p_frame->nChannels);
+        memset(buf, p_frame->width * p_frame->height * p_frame->nChannels, 0);
 
         cvShowImage("video", p_frame);
 

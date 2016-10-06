@@ -1,5 +1,5 @@
 # depslib dependency file v1.0
-1475654107 source:/home/hujia/workspace/imgproc/imageprocessing/imgproc/main.cpp
+1475717903 source:/home/hujia/workspace/imgproc/imageprocessing/imgproc/main.cpp
 	<iostream>
 	"proc.h"
 	"cv.h"
@@ -16,22 +16,40 @@
 	"opencv2/core/core_c.h"
 	"opencv2/highgui/highgui_c.h"
 
-1475654523 /home/hujia/workspace/imgproc/imageprocessing/imgproc/proc.h
+1475717789 /home/hujia/workspace/imgproc/imageprocessing/imgproc/proc.h
 
-1475647229 source:/home/hujia/workspace/imgproc/imageprocessing/imgproc/binary.cpp
+1475716488 source:/home/hujia/workspace/imgproc/imageprocessing/imgproc/binary.cpp
 	<stdio.h>
 	<string.h>
 	"proc.h"
 
-1475647081 source:/home/hujia/workspace/imgproc/imageprocessing/imgproc/grey.cpp
+1475716494 source:/home/hujia/workspace/imgproc/imageprocessing/imgproc/grey.cpp
 	<stdio.h>
 	<string.h>
 	"proc.h"
 
-1475656108 source:/home/hujia/workspace/imgproc/imageprocessing/imgproc/longedge.cpp
+1475715889 source:/home/hujia/workspace/imgproc/imageprocessing/imgproc/longedge.cpp
 	<stdio.h>
 	<stdlib.h>
 	<string.h>
 	<queue>
+	"proc.h"
+
+1475717429 source:/home/hujia/workspace/imgproc/imageprocessing/imgproc/gradient.cpp
+	<stdio.h>
+	<string.h>
+	<math.h>
+	"proc.h"
+
+1475718514 source:/home/hujia/workspace/imgproc/imageprocessing/imgproc/convolute.cpp
+	<stdio.h>
+	<string.h>
+	<math.h>
+	"proc.h"
+
+1475718505 source:/home/hujia/workspace/imgproc/imageprocessing/imgproc/gauss.cpp
+	<stdio.h>
+	<string.h>
+	<math.h>
 	"proc.h"
 

@@ -24,4 +24,17 @@ struct GreyProc {
 struct LoneedgeProc {
     unsigned char* (*process)(u8* p, u8* out, u32 w, u32 h, u8 t);
 };
+
+struct GradientProc {
+    unsigned char* (*process)(u8* p, u8* out, u32 w, u32 h);
+};
+
+struct ConvoluteProc {
+    unsigned char* (*process)(u8 *p, u8 *out, u32 w, u32 h, u8 *opera, u32 ow, float fix);
+};
+
+struct GaussProc {
+    unsigned char* (*process)(u8 *p, u8 *out, u32 w, u32 h, int ow);
+};
+
 #endif // PROC_H_INCLUDED

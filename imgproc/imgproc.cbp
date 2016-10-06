@@ -42,6 +42,9 @@
 			<Add option="-fexceptions" />
 		</Compiler>
 		<Unit filename="binary.cpp" />
+		<Unit filename="convolute.cpp" />
+		<Unit filename="gauss.cpp" />
+		<Unit filename="gradient.cpp" />
 		<Unit filename="grey.cpp" />
 		<Unit filename="longedge.cpp" />
 		<Unit filename="main.cpp" />

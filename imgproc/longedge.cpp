@@ -117,8 +117,8 @@ static unsigned char* __longedge_process(u8* p, u8* out, u32 w, u32 h, u8 t) {
 				while(saver.size() > 0) {
 					u64 coo = saver.front();
 					saver.pop();
-					u32 x = (coo & 0xffffffff00000000) >> 32;
-					u32 y = coo & 0x00000000ffffffff;
+					u32 x = (coo & _ml) >> 32;
+					u32 y = coo & _mr;
 					arr2dResult[y][x] = 255;
 				}
 				//saver.clear();

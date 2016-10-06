@@ -5,8 +5,11 @@
 
 using namespace std;
 
+extern GreyProc g_grey;
 extern BinaryProc g_binary;
 extern LoneedgeProc g_longedge;
+extern GradientProc g_gradient;
+extern GaussProc g_gauss;
 
 int main()
 {
@@ -27,15 +30,27 @@ int main()
         u8 *buf = (u8*)malloc(p_frame->width * p_frame->height * p_frame->nChannels);
         memset(buf, p_frame->width * p_frame->height * p_frame->nChannels, 0);
 
-        g_binary.process((u8*)p_frame->imageData, buf, p_frame->width, p_frame->height, 125);
+        g_grey.process((u8*)p_frame->imageData, buf, p_frame->width, p_frame->height);
         memcpy(p_frame->imageData, buf, p_frame->width * p_frame->height * p_frame->nChannels);
         memset(buf, p_frame->width * p_frame->height * p_frame->nChannels, 0);
 
-
-        g_longedge.process((u8*)p_frame->imageData, buf, p_frame->width, p_frame->height, 65);
+        g_gauss.process((u8*)p_frame->imageData, buf, p_frame->width, p_frame->height, 5);
         memcpy(p_frame->imageData, buf, p_frame->width * p_frame->height * p_frame->nChannels);
         memset(buf, p_frame->width * p_frame->height * p_frame->nChannels, 0);
 
+        g_gradient.process((u8*)p_frame->imageData, buf, p_frame->width, p_frame->height);
+        memcpy(p_frame->imageData, buf, p_frame->width * p_frame->height * p_frame->nChannels);
+        memset(buf, p_frame->width * p_frame->height * p_frame->nChannels, 0);
+
+        g_binary.process((u8*)p_frame->imageData, buf, p_frame->width, p_frame->height, 30);
+        memcpy(p_frame->imageData, buf, p_frame->width * p_frame->height * p_frame->nChannels);
+        memset(buf, p_frame->width * p_frame->height * p_frame->nChannels, 0);
+#if 1
+
+        g_longedge.process((u8*)p_frame->imageData, buf, p_frame->width, p_frame->height, 30);
+        memcpy(p_frame->imageData, buf, p_frame->width * p_frame->height * p_frame->nChannels);
+        memset(buf, p_frame->width * p_frame->height * p_frame->nChannels, 0);
+#endif
         cvShowImage("video", p_frame);
 
         free(buf);

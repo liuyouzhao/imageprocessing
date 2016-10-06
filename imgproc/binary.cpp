@@ -12,7 +12,7 @@ static unsigned char* __binary_process(u8* p, u8* out, u32 w, u32 h, u8 t) {
     }
 
     memset(out, w * h * 3, 0);
-    for(int i = 0; i < h * w * 3; i += 3) {
+    for(u32 i = 0; i < h * w * 3; i += 3) {
 
 		u8 r = p[i];
 		u8 g = p[i + 1];

@@ -1,12 +1,12 @@
 var longedge = function() {}
 
-longedge.process = function(array, width, height, t) {
-	return __longedge_process(array, width, height, t);
+longedge.process = function(array, pixels, width, height, t) {
+	return __longedge_process(array, pixels, width, height, t);
 }
 /*
 * Main processing function
 */
-function __longedge_process(array, width, height, t) {
+function __longedge_process(array, pixels, width, height, t) {
 
 	var resultPixels = [];
 	var arr2d = [];
@@ -97,11 +97,29 @@ function __longedge_process(array, width, height, t) {
 				}
 			}
 			if(saver.length >= t) {
+				var left = 99999;
+				var top = 99999;
+				var right = -1;
+				var bottom = -1;
 				while(saver.length > 0) {
 					var coo = saver.shift();
 					var x = coo[0];
 					var y = coo[1];
-					arr2dResult[y][x] = 255;
+					
+					left = x < left ? x : left;
+					top = y < top ? y : top;
+					right = x > right ? x : right;
+					bottom = y > bottom ? y : bottom;
+					if(!pixels)
+						arr2dResult[y][x] = 255;
+				}
+				if(pixels) {
+					for(var i2 = top; i2 < bottom; i2 ++) {
+						for(var j2 = left; j2 < right; j2 ++) {
+							arr2dResult[i2][j2] = pixels[(i2 * width + j2) * 4];
+							//arr2dResult[i2][j2] = 255;
+						}
+					}
 				}
 				saver = [];
 			}

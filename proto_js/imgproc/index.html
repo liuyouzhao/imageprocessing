@@ -48,11 +48,19 @@ function process() {
 	//p0 = gauss.process(p0, width, height, 5, 4);
 	//p0 = gauss.process(p0, width, height, 5, 4);
 
-  	var p1 = gradient.process(p0, width, height);
+  	var p1 = gradient.process(p0, width, height, false);
 
-  	var p2 = binary.process(p1, width, height, 65);
+  	var p2 = binary.process(p1, width, height, 55);
 
-  	var p2 = longedge.process(p2, width, height, 128);
+  	var p2 = longedge.process(p2, null, width, height, 128);
+  	p2 = watershed.process(p2, width, height, 8, 90);
+
+  	var p2 = longedge.process(p2, p0, width, height, 128);
+  	// for(var i = 0; i < width * height * 4; i ++) {
+  	// 	p2[i] = p2[i] > 0 ? p1[i] : 0;
+  	// }
+  	var p3 = gradient.process(p2, width, height, true);
+  	var p4 = gradient.process(p2, width, height, false);
   	//p2 = watershed.process(p2, width, height, 2, 40);
 
   	copyPixels(p2, pixels.data, width, height, 4);

@@ -1,12 +1,12 @@
 var gradient = function() {}
 
-gradient.process = function(pixels, width, height) {
-	return __gradient_process(pixels, width, height);
+gradient.process = function(pixels, width, height, dirv) {
+	return __gradient_process(pixels, width, height, dirv);
 }
 /*
 * Main processing function
 */
-function __gradient_process(pixels, width, height) {
+function __gradient_process(pixels, width, height, dirv) {
 
 	var resultPixels = [];
 	/* prewitt */
@@ -57,11 +57,18 @@ function __gradient_process(pixels, width, height) {
 			}
 		}
 
-		resultPixels[i] = Math.sqrt(redX*redX + redY*redY);
-		resultPixels[i + 1] = Math.sqrt(greenX*greenX + greenY*greenY);
-		resultPixels[i + 2] = Math.sqrt(blueX*blueX + blueY*blueY);
-		resultPixels[i + 3] = pixels[i + 3];
-
+		if(dirv) {
+			resultPixels[i] =  Math.atan(redX / redY) * 180 / Math.PI + 90;
+			resultPixels[i + 1] = Math.atan(greenX / greenY) * 180 / Math.PI + 90;
+			resultPixels[i + 2] = Math.atan(blueX / blueY) * 180 / Math.PI + 90;
+			resultPixels[i + 3] = pixels[i + 3];
+		}
+		else {
+			resultPixels[i] = Math.sqrt(redX*redX + redY*redY);
+			resultPixels[i + 1] = Math.sqrt(greenX*greenX + greenY*greenY);
+			resultPixels[i + 2] = Math.sqrt(blueX*blueX + blueY*blueY);
+			resultPixels[i + 3] = pixels[i + 3];
+		}
 	}
 
 	/*=================================================================================*/

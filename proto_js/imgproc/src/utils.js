@@ -13,3 +13,11 @@ function clearPixels(dst, w, h, r) {
 		}
 	}
 }
+
+function channel4To1(src, w, h) {
+	var dst = [];
+	for(var i = 0, j = 0; i < w * h * 4; i += 4, j ++) {
+		dst[j] = src[i];
+	}
+	return dst;
+}

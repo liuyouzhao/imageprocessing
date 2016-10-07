@@ -11,8 +11,13 @@
 <script type="text/javascript" src="src/convolute.js"></script>
 <script type="text/javascript" src="src/longedge.js"></script>
 <script type="text/javascript" src="src/watershed.js"></script>
-
+<script type="text/javascript" src="src/segment.js"></script>
 <script type="text/javascript" src="src/gauss.js"></script>
+
+
+<script type="text/javascript" src="src/gravect.js"></script>
+
+
 <script type="text/javascript">
 
 /*
@@ -42,29 +47,32 @@ source_image.onerror = function() {
 */
 function process() {
 	var pixels = ctx.getImageData(0, 0, width, height);
-	var p0 = grey.process(pixels.data, width, height);
-	p0 = gauss.process(p0, width, height, 5, 4);
 
-	//p0 = gauss.process(p0, width, height, 5, 4);
-	//p0 = gauss.process(p0, width, height, 5, 4);
+	var g0 = [];
+	var t1 = [];
+	var t2 = [];
 
-  	var p1 = gradient.process(p0, width, height, false);
+	var p1 = [];
+	var p2 = [];
 
-  	var p2 = binary.process(p1, width, height, 55);
+	g0 = grey.process(pixels.data, width, height);
 
-  	var p2 = longedge.process(p2, null, width, height, 128);
-  	p2 = watershed.process(p2, width, height, 8, 90);
+	t1 = gradient.process(g0, width, height, false);
+  	t2 = gradient.process(g0, width, height, true);
 
-  	var p2 = longedge.process(p2, p0, width, height, 128);
-  	// for(var i = 0; i < width * height * 4; i ++) {
-  	// 	p2[i] = p2[i] > 0 ? p1[i] : 0;
-  	// }
-  	var p3 = gradient.process(p2, width, height, true);
-  	var p4 = gradient.process(p2, width, height, false);
-  	//p2 = watershed.process(p2, width, height, 2, 40);
 
-  	copyPixels(p2, pixels.data, width, height, 4);
+	p1 = binary.process(t1, width, height, 45);
+  	p2 = segment.process(p1, width, height, 8, 0.3);
 
+
+  	var r1 = longedge.process(p2, t1, width, height, 128);
+  	var r2 = longedge.process(p2, t2, width, height, 128);
+
+  	var v = gravect.extract(r1, r2, width, height, 128, 64, 32);
+
+  	console.log(v);
+
+  	copyPixels(r1, pixels.data, width, height, 4);
 	ctx.putImageData(pixels, 0, 0);
 }
 

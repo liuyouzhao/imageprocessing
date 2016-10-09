@@ -1,68 +1,24 @@
-#include <iostream>
+#include <stdio.h>
+#include <string.h>
 #include "proc.h"
-#include "cv.h"
-#include "highgui.h"
 
-using namespace std;
+extern void process_main();
+extern int feature_main(const char* file);
 
-extern GreyProc g_grey;
-extern BinaryProc g_binary;
-extern LoneedgeProc g_longedge;
-extern GradientProc g_gradient;
-extern GaussProc g_gauss;
-
-int main()
+int main(int argc, char** argv)
 {
 
-    IplImage* p_frame = NULL;
-
-    CvCapture* p_capture = cvCreateCameraCapture(-1);
-
-    cvNamedWindow("video", 1);
-
-    while(1) {
-        p_frame = cvQueryFrame(p_capture);
-
-        if(!p_frame) {
-            break;
-        }
-
-        u8 *buf = (u8*)malloc(p_frame->width * p_frame->height * p_frame->nChannels);
-        memset(buf, p_frame->width * p_frame->height * p_frame->nChannels, 0);
-
-        g_grey.process((u8*)p_frame->imageData, buf, p_frame->width, p_frame->height);
-        memcpy(p_frame->imageData, buf, p_frame->width * p_frame->height * p_frame->nChannels);
-        memset(buf, p_frame->width * p_frame->height * p_frame->nChannels, 0);
-
-        g_gauss.process((u8*)p_frame->imageData, buf, p_frame->width, p_frame->height, 5);
-        memcpy(p_frame->imageData, buf, p_frame->width * p_frame->height * p_frame->nChannels);
-        memset(buf, p_frame->width * p_frame->height * p_frame->nChannels, 0);
-
-        g_gradient.process((u8*)p_frame->imageData, buf, p_frame->width, p_frame->height);
-        memcpy(p_frame->imageData, buf, p_frame->width * p_frame->height * p_frame->nChannels);
-        memset(buf, p_frame->width * p_frame->height * p_frame->nChannels, 0);
-
-        g_binary.process((u8*)p_frame->imageData, buf, p_frame->width, p_frame->height, 30);
-        memcpy(p_frame->imageData, buf, p_frame->width * p_frame->height * p_frame->nChannels);
-        memset(buf, p_frame->width * p_frame->height * p_frame->nChannels, 0);
+    //feature_main("./res/faces/face00065.bmp");
 #if 1
+    printf("%s %s\n", argv[0], argv[1], argv[2]);
+    char* file = argv[1];
 
-        g_longedge.process((u8*)p_frame->imageData, buf, p_frame->width, p_frame->height, 30);
-        memcpy(p_frame->imageData, buf, p_frame->width * p_frame->height * p_frame->nChannels);
-        memset(buf, p_frame->width * p_frame->height * p_frame->nChannels, 0);
-#endif
-        cvShowImage("video", p_frame);
-
-        free(buf);
-
-        char c = cvWaitKey(33);
-        if(c == 27) break;
+    if(argc >= 2 && file != 0) {
+        feature_main(file);
     }
-
-
-
-    cvReleaseCapture(&p_capture);
-    cvDestroyWindow("video");
-
+    else  {
+        process_main();
+    }
+#endif
     return 0;
 }

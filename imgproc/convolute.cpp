@@ -6,6 +6,15 @@
 
 /*
 * Main processing function
+
+    u32 px00 = px01 = px02 = j - 1 < 0 ? 0 : j - 1;
+    u32 px10 = px11 = px12 = j;
+    u32 px20 = px21 = px22 = j + 1 >= w ? w - 1 : j + 1;
+
+    u32 py00 = py10 = py20 = i - 1 < 0 ? 0 : i - 1;
+    u32 py01 = py11 = py21 = i;
+    u32 py02 = py12 = py22 = i + 1 >= h ? h - 1 : i + 1;
+
 */
 static unsigned char* __convolute_process(u8 *p, u8 *out, u32 w, u32 h, u8 *opera, u32 ow, float fix) {
 

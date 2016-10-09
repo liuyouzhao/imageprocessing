@@ -37,4 +37,10 @@ struct GaussProc {
     unsigned char* (*process)(u8 *p, u8 *out, u32 w, u32 h, int ow);
 };
 
+struct HaarlikeProc {
+    int (*process)(u8* p, u32 w, u32 h,
+                                int **ftout1, int **ftout2,
+                                u32 *wf, u32 *hf, u32 b, int type);
+};
+
 #endif // PROC_H_INCLUDED

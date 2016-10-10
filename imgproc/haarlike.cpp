@@ -6,7 +6,7 @@
  * ii(x, y) = ii(x-1,y) + ii(x,y-1) - ii(x-1,y-1) + p[x, y]
  * rt: 0 ok, !0 err
 */
-static int integral(u8 *p, u32 *out, u32 w, u32 h) {
+static int haarlike_integral(u8 *p, u32 *out, u32 w, u32 h) {
 
     if(!p  || !out) {
         return -1;
@@ -31,6 +31,119 @@ static int integral(u8 *p, u32 *out, u32 w, u32 h) {
 }
 
 /*
+*
+Edge Horizon
+    --------------------------
+
+          1      2
+          |------|
+          |      |
+          |      |
+         3|------|4
+          |      |
+          |      |
+         5|------|6
+
+    -------------------------
+
+*/
+static int haarlike_edge_horizon(u32 *integ, u32 w, u32 h,
+                                    u32 sw, u32 sh, u8 x, u8 y,
+                                    u8 bw, u8 bh, int **ftout) {
+
+    int p135x, p246x;
+    int p12y, p34y, p56y;
+
+    int ftw = w / sw;
+    int fth = h / sh;
+
+    *ftout = (int*) malloc(ftw * fth * sizeof(int));
+
+    p12y = y;
+    p34y = y + (bh >> 1);
+    p56y = y + bh - 1;
+    for(int i = 0; i < fth; i ++, p12y += sh, p34y += sh, p56y += sh) {
+
+        p135x = x;
+        p246x = x + bw - 1;
+        for(int j = 0; j < ftw; j ++, p135x += sw, p246x += sw) {
+
+            if(bw > 1) {
+                int ii1 = integ[p12y * w + p135x];
+                int ii2 = integ[p12y * w + p246x];
+                int ii3 = integ[p34y * w + p135x];
+                int ii4 = integ[p34y * w + p246x];
+                int ii5 = integ[p56y * w + p135x];
+                int ii6 = integ[p56y * w + p246x];
+
+
+                (*ftout)[i * ftw + j] = (-1) * (ii3 + ii6 - ii4 - ii5) +
+                                                (ii1 + ii4 - ii2 - ii3);
+            }
+            else {
+                /*
+                int ii3 = integ[(p34y - 1) * w + p135x];
+                int ii6 = integ[p56y * w + p246x];
+                int ii4 =
+                int ii5 = p56y * w + p246x - 1 >= 0 ? integ[p56y * w + p246x - 1] : 0;
+
+                (*ftout)[i * ftw + j] = (-1) * (ii6 - ii3 - ii5) + (ii3);*/
+            }
+        }
+    }
+    return fth * ftw;
+}
+
+/*
+*
+Edge Horizon
+    --------------------------
+
+          1      2      3
+          |------|------|
+          |      |      |
+          |      |      |
+          |------|------|
+          4      5      6
+    -------------------------
+
+*/
+static int haarlike_edge_vert(u32 *integ, u32 w, u32 h, u32 sw, u32 sh, u8 x, u8 y, u8 bw, u8 bh, int **ftout) {
+
+    int p14x, p25x, p36x;
+    int p123y, p456y;
+
+    int ftw = w / sw;
+    int fth = h / sh;
+
+    *ftout = (int*) malloc(ftw * fth * sizeof(int));
+
+    p123y = y;
+    p456y = y + (bh - 1);
+    for(int i = 0; i < fth; i ++, p123y += sh, p456y += sh) {
+
+        p14x = x;
+        p25x = x + (bw >> 1);
+        p36x = x + bw - 1;
+        for(int j = 0; j < ftw; j ++, p14x += sw, p25x += sw, p36x += sw) {
+
+            int ii1 = integ[p123y * w + p14x];
+            int ii2 = integ[p123y * w + p25x];
+            int ii3 = integ[p123y * w + p36x];
+            int ii4 = integ[p456y * w + p14x];
+            int ii5 = integ[p456y * w + p25x];
+            int ii6 = integ[p456y * w + p36x];
+
+            (*ftout)[i * ftw + j] = (ii1 + ii5 - ii2 - ii4) +
+                                    (ii2 + ii6 - ii3 - ii5) * (-1);
+        }
+    }
+
+    return ftw * fth;
+}
+
+
+/*
 * Grey, 1 channel
 * @params
 * type:
@@ -39,23 +152,6 @@ static int integral(u8 *p, u32 *out, u32 w, u32 h) {
 * 3, center
 * 4, linear
 */
-static int __haarlike_process(u8* p, u32 w, u32 h,
-                                int **ftout1, int **ftout2,
-                                u32 *wf, u32 *hf, u32 b, int type) {
-
-    int ret = 0;
-    u32 *integ = 0;
-    u32 *out1 = 0;
-    u32 *out2 = 0;
-
-    int p147x, p123y;
-    int p258x, p456y;
-    int p369x, p789y;
-
-    integ = (u32*) malloc(w * h * sizeof(u32));
-
-    ret = integral(p, integ, w, h);
-
     /* template in whole image
 
     Edge & Center
@@ -83,46 +179,11 @@ static int __haarlike_process(u8* p, u32 w, u32 h,
 
     Left+Top is the position focusing
     */
-    int ftw = (w - b + 1);
-    int fth = (h - b + 1);
-    *wf = ftw;
-    *hf = fth;
-    *ftout1 = (int*) malloc(ftw * fth * sizeof(int));
-    *ftout2 = (int*) malloc(ftw * fth * sizeof(int));
-
-process_edge:
-
-    p147x = p123y = 0;
-    p258x = p456y = (b >> 1);
-    p369x = p789y = b - 1;
-
-    for(int i = 0; i < fth; i ++, p123y ++, p456y ++, p789y ++) {
-        for(int j = 0; j < ftw; j ++, p147x ++, p258x ++, p369x ++) {
-
-            int ii1 = integ[p123y * ftw + p147x];
-            int ii2 = integ[p123y * ftw + p258x];
-            int ii3 = integ[p123y * ftw + p369x];
-            int ii4 = integ[p456y * ftw + p147x];
-            int ii5 = integ[p456y * ftw + p258x];
-            int ii6 = integ[p456y * ftw + p369x];
-            int ii7 = integ[p789y * ftw + p147x];
-            int ii8 = integ[p789y * ftw + p258x];
-            int ii9 = integ[p789y * ftw + p369x];
-
-            (*ftout1)[i * ftw + j] = (1) * (ii5 + ii1 - ii2 - ii4) + (-1) * (ii6 + ii2 - ii3 - ii5) +
-                                  (1) * (ii8 + ii4 - ii5 - ii7) + (-1) * (ii9 + ii5 - ii6 - ii8);
-            (*ftout2)[i * ftw + j] = (-1) * (ii5 + ii1 - ii2 - ii4) + (1) * (ii6 + ii2 - ii3 - ii5) +
-                                  (-1) * (ii8 + ii4 - ii5 - ii7) + (1) * (ii9 + ii5 - ii6 - ii8);
-
-        }
-    }
-
-    free(integ);
-    return ret;
-}
 
 HaarlikeProc g_haarlike = {
-    .process = __haarlike_process
+    .haarlike_integral = haarlike_integral,
+    .haarlike_edge_horizon = haarlike_edge_horizon,
+    .haarlike_edge_vert = haarlike_edge_vert
 };
 
 /*

@@ -4,6 +4,21 @@
 #ifndef PROC_UTILS_H_INCLUDED
 #define PROC_UTILS_H_INCLUDED
 
+#define COLOR_RGBA 1
+
+#define SAMPLE_PATH "/home/hujia/workspace/imgproc/imageprocessing/imgproc/res/faces"
+#define FEATURE_PATH "/home/hujia/workspace/imgproc/imageprocessing/imgproc/train/f_v"
+#define CLASSFIER_PATH "/home/hujia/workspace/imgproc/imageprocessing/imgproc/train/clssf"
+#define WEAK_CLASSFIER_PATH "/home/hujia/workspace/imgproc/imageprocessing/imgproc/train/weak_clssf"
+#define STRONG_CLASSFIER_PATH "/home/hujia/workspace/imgproc/imageprocessing/imgproc/train/strong_clssf"
+
+#define WEIGHT_FILE "/home/hujia/workspace/imgproc/imageprocessing/imgproc/train/s_w"
+
+#define SAMPLE_BLOCK_WIDTH 20
+#define SAMPLE_NUMBER 2000
+#define SAMPLE_MERGED_WIDTH 50
+#define SAMPLE_MERGED_HEIGHT 40
+
 typedef unsigned char u8;
 typedef unsigned int u32;
 typedef unsigned long long u64;
@@ -38,9 +53,23 @@ struct GaussProc {
 };
 
 struct HaarlikeProc {
-    int (*process)(u8* p, u32 w, u32 h,
-                                int **ftout1, int **ftout2,
-                                u32 *wf, u32 *hf, u32 b, int type);
+    int (*haarlike_integral)(u8 *p, u32 *out, u32 w, u32 h);
+    int (*haarlike_edge_horizon)(u32 *integ, u32 w, u32 h, u32 sw, u32 sh, u8 x, u8 y, u8 bw, u8 bh, int **ftout);
+    int (*haarlike_edge_vert)(u32 *integ, u32 w, u32 h, u32 sw, u32 sh, u8 x, u8 y, u8 bw, u8 bh, int **ftout);
+};
+
+/*
+* Inner structs
+*/
+struct __clssf {
+    u8 x;
+    u8 y;
+    u8 bw;
+    u8 bh;
+    u8 tt;
+    u8 tn;
+    double em;
+    double am;
 };
 
 #endif // PROC_H_INCLUDED

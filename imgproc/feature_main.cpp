@@ -1,3 +1,4 @@
+#if 0
 #include <stdio.h>
 #include <stdlib.h>
 #include "proc.h"
@@ -5,11 +6,17 @@
 #include "highgui.h"
 #include "imgcodecs.hpp"
 
-using namespace std;
+#define CLSSF_PATH "/train/clssf/"
+#define F_VAL_PATH "/train/f_v/"
 
 extern HaarlikeProc g_haarlike;
 
-int write_file(const char* file, int *data, int len) {
+
+static __clssf* gen_clssf(u8 px, u8 py, u8 bw, u8 bh, u8 tt, u8 tn) {
+    return 0;
+}
+
+static int write_file(const char* file, int *data, int len) {
     FILE* fd = fopen(file, "w");
     int nblock = fwrite(data, len, 1, fd);
 
@@ -18,6 +25,10 @@ int write_file(const char* file, int *data, int len) {
 
     printf("%s\n", file);
 }
+
+static int save_feature_val(const char* group, int *data, int len) {
+}
+
 
 int feature_main(const char* file)
 {
@@ -43,22 +54,35 @@ int feature_main(const char* file)
         }
     }
 
+    int s = 1;
+    int t = 2;
 
     int *ftout1 = 0;
     int *ftout2 = 0;
     u32 wf = 0;
     u32 hf = 0;
-    g_haarlike.process(gm, nc, nr, &ftout1, &ftout2, &wf, &hf, 2, 1);
+    u32 *integ = 0;
+    int bw, bh;
 
-#if DEBUG
-    printf("%d %d %p, %p  [%d]", wf, hf, ftout1, ftout2, ftout1[0]);
-    for(int i = 0; i < hf; i ++) {
-        for(int j = 0; j < wf; j ++) {
-            printf("%02x ", ftout1[i * wf  + j]);
+    integ = (u32*) malloc(w * h * sizeof(u32));
+
+    ret = g_haarlike.haarlike_integral(p, integ, w, h);
+    //u32 *integ, u32 w, u32 h, int **ftout, u32 *wf, u32 *hf, int bw, int bh)
+
+    int s, t;
+    s = 1;
+    t = 2;
+    for(int i = bh ; i <= h; i += s ) {
+
+        for(int j = bw; j <= w; j += t ) {
+
+            edge_horizon();
+
         }
-        printf("\n");
+
     }
-#endif
+    ret = g_haarlike.haarlike_edge_vert(gm, nc, nr, &ftout1, &wf, &hf, 2, 1);
+    //g_haarlike.process(gm, nc, nr, &ftout1, &ftout2, &wf, &hf, 2, 1);
 
     int fn_len = strlen(file);
     char fn_out1[fn_len + 32];
@@ -73,17 +97,9 @@ int feature_main(const char* file)
     write_file(fn_out1, ftout1, wf * hf * sizeof(int));
     write_file(fn_out2, ftout2, wf * hf * sizeof(int));
 
-
-
-#if DEBUG
-    IplImage* p_frame = cvCreateImage(cvSize(nc, nr), IPL_DEPTH_8U, 1);
-    memcpy(p_frame->imageData, gm, p_frame->width * p_frame->height * p_frame->nChannels);
-    cvNamedWindow("show", 1);
-    while(1) {
-        cvShowImage("show", p_frame);
-        char k = cvWaitKey(33);
-    }
-#endif
+    free(ftout1);
+    free(ftout2);
 
     return 0;
 }
+#endif

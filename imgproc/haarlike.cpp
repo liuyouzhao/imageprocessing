@@ -77,8 +77,9 @@ static int haarlike_edge_horizon(u32 *integ, u32 w, u32 h,
                 int ii6 = integ[p56y * w + p246x];
 
 
-                (*ftout)[i * ftw + j] = (-1) * (ii3 + ii6 - ii4 - ii5) +
-                                                (ii1 + ii4 - ii2 - ii3);
+                (*ftout)[i * ftw + j] = (-1) *   (ii3 + ii6 - ii4 - ii5) +
+                                               (ii1 + ii4 - ii2 - ii3);
+                (*ftout)[i * ftw + j] = (*ftout)[i * ftw + j] / (bw * bh);
             }
             else {
                 /*
@@ -118,26 +119,37 @@ static int haarlike_edge_vert(u32 *integ, u32 w, u32 h, u32 sw, u32 sh, u8 x, u8
 
     *ftout = (int*) malloc(ftw * fth * sizeof(int));
 
-    p123y = y;
-    p456y = y + (bh - 1);
-    for(int i = 0; i < fth; i ++, p123y += sh, p456y += sh) {
+    if(bw > 1)
+    {
+        p123y = y;
+        p456y = y + (bh - 1);
+        for(int i = 0; i < fth; i ++, p123y += sh, p456y += sh)
+        {
 
-        p14x = x;
-        p25x = x + (bw >> 1);
-        p36x = x + bw - 1;
-        for(int j = 0; j < ftw; j ++, p14x += sw, p25x += sw, p36x += sw) {
+            p14x = x;
+            p25x = x + (bw >> 1);
+            p36x = x + bw - 1;
+            for(int j = 0; j < ftw; j ++, p14x += sw, p25x += sw, p36x += sw)
+            {
 
-            int ii1 = integ[p123y * w + p14x];
-            int ii2 = integ[p123y * w + p25x];
-            int ii3 = integ[p123y * w + p36x];
-            int ii4 = integ[p456y * w + p14x];
-            int ii5 = integ[p456y * w + p25x];
-            int ii6 = integ[p456y * w + p36x];
+                int ii1 = integ[p123y * w + p14x];
+                int ii2 = integ[p123y * w + p25x];
+                int ii3 = integ[p123y * w + p36x];
+                int ii4 = integ[p456y * w + p14x];
+                int ii5 = integ[p456y * w + p25x];
+                int ii6 = integ[p456y * w + p36x];
 
-            (*ftout)[i * ftw + j] = (ii1 + ii5 - ii2 - ii4) +
-                                    (ii2 + ii6 - ii3 - ii5) * (-1);
+                (*ftout)[i * ftw + j] = (ii1 + ii5 - ii2 - ii4) +
+                                        (-1) * (ii2 + ii6 - ii3 - ii5);
+                (*ftout)[i * ftw + j] = (*ftout)[i * ftw + j] / (bw * bh);
+            }
         }
     }
+    else {
+
+
+    }
+
 
     return ftw * fth;
 }

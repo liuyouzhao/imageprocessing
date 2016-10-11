@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <math.h>
+#include <vector>
 
 #include "proc.h"
 #include "proc_utils.h"
@@ -10,10 +11,15 @@
 #include "imgcodecs.hpp"
 
 static int statistic_clssfier(int x, int y, int bw, int bh, int tt, int tn, int *ftout, int siz);
-static int get_next_weak_clss(int sw, int sh, int s, int t, int tt, int tn, int siz, int rt);
+static struct __clssf*  create_next_weak_clss(int rt);
+static struct __clssf* create_clssfier(int x, int y, int bw, int bh, int tt, int tn, int siz);
+static int save_strong_clss_to_file(__strong_clssf* stroclssf);
 
 extern HaarlikeProc g_haarlike;
 static double *g_weight = 0;
+static __strong_clssf* g_strocls = 0;
+
+static std::vector<struct __clssf*> g_classifiers;
 
 static int read_file(const char* file, char* data, int len) {
     FILE* fd = fopen(file, "r");
@@ -130,6 +136,7 @@ int adaboost_train(u8* sample, int w, int h, int sw, int sh)
     s = 4;
     t = 2;
     int *ftout = 0;
+    int counter = 0;
     for(int i = s ; i <= sh; i += s ) {
 
         for(int j = t; j <= sw; j += t ) {
@@ -151,35 +158,163 @@ int adaboost_train(u8* sample, int w, int h, int sw, int sh)
                     sprintf(file, "%s/f_v_%d_%d_%d_%d_%d_%d", FEATURE_PATH, x, y, j, i, 0, 0);
                     write_file(file, (char*)ftout, siz * sizeof(int));
 
-                    //statistic_clssfier(x, y, j, i, 0, 0, ftout, siz);
+                    struct __clssf *cls = create_clssfier(x, y, j, i, 0, 0, nw * nh);
+                    g_classifiers.push_back(cls);
 
                     free(ftout);
+                    ftout = 0;
+                    counter ++;
                 }
             }
         }
     }
 
 
-    for(int rt = 0; rt < 200; rt ++) {
-        get_next_weak_clss(sw, sh, s, t, 0, 0, nw * nh, rt);
+    s = 2;
+    t = 4;
+    for(int i = s ; i <= sh; i += s ) {
+
+        for(int j = t; j <= sw; j += t ) {
+
+
+            for(int y = 0; y < sh - i + 1; y ++ ) {
+                for(int x = 0; x < sw - j + 1; x ++) {
+
+                    int siz = g_haarlike.haarlike_edge_vert(integ, w, h, sw, sh, x, y, j, i, &ftout);
+
+#if 0
+                    for(int n = 0; n < siz; n ++) {
+                        printf("%d ", ftout[n]);
+                    }
+                    printf("============================================\n");
+#endif
+
+                    char file[256] = {0};
+                    sprintf(file, "%s/f_v_%d_%d_%d_%d_%d_%d", FEATURE_PATH, x, y, j, i, 0, 1);
+                    write_file(file, (char*)ftout, siz * sizeof(int));
+
+                    struct __clssf *cls = create_clssfier(x, y, j, i, 0, 1, nw * nh);
+                    g_classifiers.push_back(cls);
+
+                    free(ftout);
+                    ftout = 0;
+                    counter ++;
+                }
+            }
+        }
     }
+
+    if(g_strocls == 0) {
+        g_strocls = new __strong_clssf();
+    }
+
+    for(int rt = 0; rt < TRAINING_TIMES; rt ++) {
+        struct __clssf* wkcls = create_next_weak_clss(rt);
+        int conflict = 0;
+
+        if(g_strocls->nwk > 0) {
+            std::vector<struct __clssf*>::iterator it;
+            for( it = g_strocls->vwkcs.begin(); it != g_strocls->vwkcs.end(); it ++ ) {
+
+                struct __clssf* p = *it;
+                if(p == wkcls) {
+                    conflict ++;
+                }
+            }
+        }
+
+
+        if(!conflict || g_strocls->nwk == 0) {
+            g_strocls->vwkcs.push_back(wkcls);
+            g_strocls->nwk ++;
+        }
+    }
+
+    save_strong_clss_to_file(g_strocls);
 
     return 0;
 }
 
+static int save_strong_clss_to_file(__strong_clssf* stroclssf) {
 
-static int statistic_clssfier(int x, int y, int bw, int bh, int tt, int tn, int *ftout, int siz) {
+    FILE* fd = fopen(STRONG_CLASSFIER_FILE, "w");
 
-    struct __clssf cls = {
-        .x = x,
-        .y = y,
-        .bw = bw,
-        .bh = bh,
-        .tt = tt,
-        .tn = tn,
-        .em = 0.0f,
-        .am = 0.0f
-    };
+    int nblock = fwrite((char*)(&(stroclssf->nwk)), sizeof(int), 1, fd);
+    if(nblock != 1) {
+        printf("Error, write file error: %s   size: %d \n ", STRONG_CLASSFIER_FILE, nblock);
+        fclose(fd);
+        return -1;
+    }
+
+    std::vector<struct __clssf*>::iterator it;
+    for( it = stroclssf->vwkcs.begin(); it != stroclssf->vwkcs.end(); it ++ ) {
+        struct __clssf* p = *it;
+
+        nblock = fwrite((char*)p, sizeof(struct __clssf), 1, fd);
+
+        if(nblock != 1) {
+            printf("Error, write file error: %s   size: %d \n ", STRONG_CLASSFIER_FILE, nblock);
+            fclose(fd);
+            return -1;
+        }
+    }
+
+    fflush(fd);
+    fclose(fd);
+
+    return 0;
+}
+
+static int load_strong_clss_from_file(const char* file, __strong_clssf** stroclssf) {
+
+    if(!stroclssf) {
+        return -1;
+    }
+
+
+    FILE* fd = fopen(file, "r");
+
+    *stroclssf = new __strong_clssf();
+
+    int nwk = 0;
+    fread(&nwk, sizeof(int), 1, fd);
+
+
+
+    for(int i = 0; i < nwk; i ++) {
+        struct __clssf *pcls = (struct __clssf*) malloc(sizeof(struct __clssf));
+        int siz = fread(pcls, sizeof(struct __clssf), 1, fd);
+
+        if(siz != 1) {
+            printf("Read Strong File ERROR %s %d\n", file, siz);
+            fclose(fd);
+            return -1;
+        }
+
+        (*stroclssf)->vwkcs.push_back(pcls);
+    }
+
+    (*stroclssf)->nwk = nwk;
+
+    fclose(fd);
+
+}
+
+static struct __clssf* create_clssfier(int x, int y, int bw, int bh, int tt, int tn, int siz) {
+    struct __clssf* cls = (struct __clssf*) malloc(sizeof(struct __clssf));
+    cls->x = x; cls->y = y;
+    cls->bw = bw; cls->bh = bh;
+    cls->tt = tt;
+    cls->tn = tn;
+    cls->ss = siz;
+    cls->am = 0.0f;
+    cls->em = 0.0f;
+
+    return cls;
+}
+
+
+static int statistic_clssfier(struct __clssf* cls, int *ftout, int siz) {
 
     double thehold = 0;
     double I = 1.0f;
@@ -188,16 +323,13 @@ static int statistic_clssfier(int x, int y, int bw, int bh, int tt, int tn, int 
 
     read_file(WEIGHT_FILE, (char*)g_weight, siz * sizeof(double));
 
-    int zero = 0;
+    thehold = 0;
     for(int i = 0; i < siz; i ++) {
-        thehold += (double)(g_weight[i] * (double)(ftout[i]));
-        if(ftout[i] == 0) {
-            zero ++;
-        }
+        thehold += (1.0f / (double)siz * (double)(ftout[i]));
     }
 
     for(int i = 0; i < siz; i ++) {
-        ftout[i] = ftout[i] >= thehold ? 1 : -1;
+        ftout[i] = ftout[i] > thehold ? 1 : -1;
     }
 
     for(int i = 0; i < siz; i ++) {
@@ -212,92 +344,198 @@ static int statistic_clssfier(int x, int y, int bw, int bh, int tt, int tn, int 
     if(em == 0.0f) {
         am = 0.0f;
     }
-    cls.em = em;
-    cls.am = am;
+    cls->em = em;
+    cls->am = am;
 
 
     char file[256] = {0};
-    sprintf(file, "%s/clssf_%d_%d_%d_%d_%d_%d", CLASSFIER_PATH, x, y, bw, bh, tt, tn);
-    printf(" em[%f] am[%f] \n", em, am);
-    write_file(file, (char*)(&cls), sizeof(struct __clssf));
+    sprintf(file, "%s/clssf_%d_%d_%d_%d_%d_%d", CLASSFIER_PATH,
+                    cls->x, cls->y, cls->bw, cls->bh, cls->tt, cls->tn);
+    //printf(" em[%f] am[%f] \n", em, am);
+    write_file(file, (char*)(cls), sizeof(struct __clssf));
 
     return 0;
 }
 
-static int get_next_weak_clss(int sw, int sh, int s, int t, int tt, int tn, int siz, int rt)
+static struct __clssf* create_next_weak_clss(int rt)
 {
+    int *ftout = 0;
 
-    int *ftout = (int*) malloc(siz * sizeof(int));
-    for(int i = s ; i <= sh; i += s )
-    {
-        for(int j = t; j <= sw; j += t )
-        {
+    std::vector<struct __clssf*>::iterator it;
+    for( it = g_classifiers.begin(); it != g_classifiers.end(); it ++ ) {
 
-            for(int y = 0; y < sh - i + 1; y ++ )
-            {
-                for(int x = 0; x < sw - j + 1; x ++)
-                {
-                    char file[256] = {0};
-                    sprintf(file, "%s/f_v_%d_%d_%d_%d_%d_%d", FEATURE_PATH, x, y, j, i, 0, 0);
+        struct __clssf* p = *it;
 
-                    memset(ftout, 0, siz * sizeof(int));
+        int x = p->x;
+        int y = p->y;
+        int bw = p->bw;
+        int bh = p->bh;
+        int tt = p->tt;
+        int tn = p->tn;
+        int siz = p->ss;
 
-                    read_file(file, (char*)ftout, siz * sizeof(int));
+        ftout = (int*)malloc(siz * sizeof(int));
+        memset(ftout, 0, siz * sizeof(int));
 
-                    statistic_clssfier(x, y, j, i, tt, tn, ftout, siz);
-                }
-            }
-        }
+
+        char file[256] = {0};
+        sprintf(file, "%s/f_v_%d_%d_%d_%d_%d_%d", FEATURE_PATH, x, y, bw, bh, tt, tn);
+
+        read_file(file, (char*)ftout, siz * sizeof(int));
+
+        statistic_clssfier(p, ftout, siz);
+
+        free(ftout);
     }
 
     /*
      * Get the BEST ONE!
     */
     double min_em = 9999.0f;
-    struct __clssf best_cls;
-    for(int i = s ; i <= sh; i += s )
-    {
-        for(int j = t; j <= sw; j += t )
-        {
-
-
-            for(int y = 0; y < sh - i + 1; y ++ )
-            {
-                for(int x = 0; x < sw - j + 1; x ++)
-                {
-                    char file[256] = {0};
-                    sprintf(file, "%s/clssf_%d_%d_%d_%d_%d_%d", CLASSFIER_PATH, x, y, j, i, tt, tn);
-
-                    struct __clssf cls;
-
-                    read_file(file, (char*)(&cls), sizeof(struct __clssf));
-                    if(min_em > cls.em) {
-                        min_em = cls.em;
-                        memcpy(&best_cls, &cls, sizeof(struct __clssf));
-                    }
-                }
-            }
+    struct __clssf* p_best;
+    for( it = g_classifiers.begin(); it != g_classifiers.end(); it ++ ) {
+        struct __clssf* p = *it;
+        if(min_em > p->em) {
+            min_em = p->em;
+            p_best = p;
         }
     }
-    printf("best best_cls is em: %f  am: %f\n", best_cls.em, best_cls.am);
 
-    double em = best_cls.em;
-    double am = best_cls.am;
+    ftout = (int*) malloc(p_best->ss * sizeof(int));
+    char file[256] = {0};
+    double thehold = 0.0f;
+    sprintf(file, "%s/f_v_%d_%d_%d_%d_%d_%d", FEATURE_PATH,
+            p_best->x, p_best->y, p_best->bw, p_best->bh, p_best->tt, p_best->tn);
+    memset(ftout, 0, p_best->ss * sizeof(int));
+    read_file(file, (char*)ftout, p_best->ss * sizeof(int));
+
+    for(int i = 0; i < p_best->ss; i ++) {
+        thehold += (1.0f / (double)p_best->ss * (double)(ftout[i]));
+    }
+
+    for(int i = 0; i < p_best->ss; i ++) {
+        ftout[i] = ftout[i] >= thehold ? 1 : -1;
+    }
+
+    double em = p_best->em;
+    double am = p_best->am;
     double zm = 0.0f;
-    for(int i = 0; i < siz; i ++) {
+
+    for(int i = 0; i < p_best->ss; i ++) {
         zm += g_weight[i] * exp(-am * ftout[i]);
     }
 
-    for(int i = 0; i < siz; i ++) {
-        g_weight[i] = g_weight[i] * exp(-am * ftout[i]) / zm;
+    for(int i = 0; i < p_best->ss; i ++) {
+        double ex = exp(-am * ftout[i]);
+        g_weight[i] = g_weight[i] * ex / zm;
     }
 
-    printf("\n");
-    write_file(WEIGHT_FILE, (char*)g_weight, siz * sizeof(double));
+#if 0
+    for(int i = 0; i < p_best->ss; i ++) {
+        printf("%f ", g_weight[i]);
+    }
+    printf("==================================================================\n");
+#endif
 
+    write_file(WEIGHT_FILE, (char*)g_weight, p_best->ss * sizeof(double));
 
-    char file[256] = {0};
+    memset(file, 0, 256);
     sprintf(file, "%s/wk_clssf_%d_%d_%d_%d_%d_%d_%d", WEAK_CLASSFIER_PATH,
-                rt, best_cls.x, best_cls.y, best_cls.bw, best_cls.bh, best_cls.tt, best_cls.tn);
-    write_file(file, (char*)(&best_cls), sizeof(struct __clssf));
+                rt, p_best->x, p_best->y, p_best->bw, p_best->bh, p_best->tt, p_best->tn);
+    printf("%f %f \n", p_best->em, p_best->am);
+    write_file(file, (char*)(p_best), sizeof(struct __clssf));
+
+    return p_best;
+}
+
+
+static int get_rect_face_fv( u32* integral,
+                             int integral_block,
+                             int x, int y,
+                             int block_width, int block_height,
+                             int template_type, int template_index,
+                             int sample_block ) {
+
+    int _x = 0;
+    int _y = 0;
+    int _bw = 0;
+    int _bh = 0;
+    _x = x * (integral_block / sample_block);
+    _y = y * (integral_block / sample_block);
+    _bw = block_width * (integral_block / sample_block);
+    _bh = block_height * (integral_block / sample_block);
+    int *ftout = 0;
+    int fv = 0;
+
+    switch(template_type) {
+    case 0:
+        switch(template_index) {
+        case 0:
+
+            g_haarlike.haarlike_edge_horizon(integral, integral_block, integral_block,
+                                  1, 1, _x, _y, _bw, _bh, &ftout);
+            fv = ftout[0];
+
+            free(ftout);
+            return fv;
+
+        break;
+        case 1:
+            g_haarlike.haarlike_edge_vert(integral, integral_block, integral_block,
+                                  1, 1, _x, _y, _bw, _bh, &ftout);
+            fv = ftout[0];
+
+            free(ftout);
+            return fv;
+        /// TODO: implement new ones
+        break;
+        }
+
+    break;
+
+    }
+}
+
+int adaboost_face_test(u8 *image, int image_block) {
+
+    /**
+     * (1) get integral image
+    */
+    double score1 = 0.0f;
+    double score2 = 0.0f;
+
+    u32* integral = (u32*) malloc(sizeof(u32) * image_block * image_block);
+    g_haarlike.haarlike_integral(image, integral, image_block, image_block);
+
+    static __strong_clssf* pstr_clss1 = 0;
+    static __strong_clssf* pstr_clss2 = 0;
+
+    if(pstr_clss1 == 0 && pstr_clss2 == 0) {
+        load_strong_clss_from_file(STRONG_CLASSFIER_FILE1, &pstr_clss1);
+        load_strong_clss_from_file(STRONG_CLASSFIER_FILE2, &pstr_clss2);
+    }
+
+
+    std::vector<struct __clssf*>::iterator it;
+    for( it = pstr_clss1->vwkcs.begin(); it != pstr_clss1->vwkcs.end(); it ++ ) {
+        struct __clssf* p = *it;
+        int fv = get_rect_face_fv(integral, image_block, p->x, p->y, p->bw, p->bh, p->tt, p->tn, SAMPLE_BLOCK_WIDTH);
+        score1 += (double)fv * -(p->am);
+    }
+
+    for( it = pstr_clss2->vwkcs.begin(); it != pstr_clss2->vwkcs.end(); it ++ ) {
+        struct __clssf* p = *it;
+        int fv = get_rect_face_fv(integral, image_block, p->x, p->y, p->bw, p->bh, p->tt, p->tn, SAMPLE_BLOCK_WIDTH);
+        score2 += (double)fv * -(p->am);
+    }
+
+    score1 = score1 / pstr_clss1->nwk;
+    score2 = score2 / pstr_clss2->nwk;
+
+    printf("%f  %f\n", score1, score2);
+
+    if(score1 > score2) {
+        return 1;
+    }
+    return 0;
 }

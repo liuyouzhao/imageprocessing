@@ -18,6 +18,9 @@ int process_main()
 
     CvCapture* p_capture = cvCreateCameraCapture(1);
 
+    cvSetCaptureProperty(p_capture, CV_CAP_PROP_FRAME_WIDTH, 200);
+    cvSetCaptureProperty(p_capture, CV_CAP_PROP_FRAME_HEIGHT, 200);
+
     cvNamedWindow("video", 1);
 
     while(1) {
@@ -30,7 +33,7 @@ int process_main()
         u8 *buf = (u8*)malloc(p_frame->width * p_frame->height * p_frame->nChannels);
         memset(buf, p_frame->width * p_frame->height * p_frame->nChannels, 0);
 
-        g_grey.process((u8*)p_frame->imageData, buf, p_frame->width, p_frame->height);
+        g_grey.process((u8*)p_frame->imageData, buf, p_frame->width, p_frame->height, 0);
         memcpy(p_frame->imageData, buf, p_frame->width * p_frame->height * p_frame->nChannels);
         memset(buf, p_frame->width * p_frame->height * p_frame->nChannels, 0);
 

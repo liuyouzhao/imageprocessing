@@ -1,23 +1,32 @@
 #ifndef PROC_H_INCLUDED
 #define PROC_H_INCLUDED
+#include <vector>
+
 
 #ifndef PROC_UTILS_H_INCLUDED
 #define PROC_UTILS_H_INCLUDED
 
 #define COLOR_RGBA 1
 
-#define SAMPLE_PATH "/home/hujia/workspace/imgproc/imageprocessing/imgproc/res/faces"
+#define FACE 0
+
+#define SAMPLE_PATH "/home/hujia/workspace/imgproc/imageprocessing/imgproc/res/nonfaces"
+//#define SAMPLE_PATH "/home/hujia/workspace/imgproc/imageprocessing/imgproc/res/faces"
 #define FEATURE_PATH "/home/hujia/workspace/imgproc/imageprocessing/imgproc/train/f_v"
 #define CLASSFIER_PATH "/home/hujia/workspace/imgproc/imageprocessing/imgproc/train/clssf"
 #define WEAK_CLASSFIER_PATH "/home/hujia/workspace/imgproc/imageprocessing/imgproc/train/weak_clssf"
-#define STRONG_CLASSFIER_PATH "/home/hujia/workspace/imgproc/imageprocessing/imgproc/train/strong_clssf"
 
+#define STRONG_CLASSFIER_FILE "/home/hujia/workspace/imgproc/imageprocessing/imgproc/train/strong_clssf/strong_clssf"
+#define STRONG_CLASSFIER_FILE1 "/home/hujia/workspace/imgproc/imageprocessing/imgproc/train/strong_clssf/strong_clssf01"
+#define STRONG_CLASSFIER_FILE2 "/home/hujia/workspace/imgproc/imageprocessing/imgproc/train/strong_clssf/strong_clssf02"
 #define WEIGHT_FILE "/home/hujia/workspace/imgproc/imageprocessing/imgproc/train/s_w"
 
 #define SAMPLE_BLOCK_WIDTH 20
 #define SAMPLE_NUMBER 2000
 #define SAMPLE_MERGED_WIDTH 50
 #define SAMPLE_MERGED_HEIGHT 40
+
+#define TRAINING_TIMES 30
 
 typedef unsigned char u8;
 typedef unsigned int u32;
@@ -33,7 +42,7 @@ struct BinaryProc {
 };
 
 struct GreyProc {
-    unsigned char* (*process)(u8* p, u8* out, u32 w, u32 h);
+    unsigned char* (*process)(u8* p, u8* out, u32 w, u32 h, int type);
 };
 
 struct LoneedgeProc {
@@ -68,8 +77,15 @@ struct __clssf {
     u8 bh;
     u8 tt;
     u8 tn;
+    u32 ss;
     double em;
     double am;
+};
+
+class __strong_clssf {
+public:
+    int nwk;
+    std::vector<struct __clssf*> vwkcs;
 };
 
 #endif // PROC_H_INCLUDED

@@ -18,6 +18,10 @@ static int save_strong_clss_to_file(__strong_clssf* stroclssf);
 extern HaarlikeProc g_haarlike;
 static double *g_weight = 0;
 static __strong_clssf* g_strocls = 0;
+static int up_sample_from = 0;
+static int up_sample_to = 1999;
+static int down_sample_from = 2000;
+static int down_sample_to = 3999;
 
 static std::vector<struct __clssf*> g_classifiers;
 
@@ -103,7 +107,7 @@ int adaboost_merge_samples(const char* path, int file_num, int nw, int nh, int s
 }
 
 
-int adaboost_train(u8* sample, int w, int h, int sw, int sh)
+int adaboost_train(u8* sample1, u8* sample2, int w, int h, int sw, int sh)
 {
     int s = 1;
     int t = 2;
@@ -112,30 +116,36 @@ int adaboost_train(u8* sample, int w, int h, int sw, int sh)
     int *ftout2 = 0;
     u32 wf = 0;
     u32 hf = 0;
-    u32 *integ = 0;
+    u32 *integ1 = 0;
+    u32 *integ2 = 0;
+
     int bw, bh;
 
     int nw = w / sw;
     int nh = h / sh;
 
-    g_weight = (double*) malloc(nw * nh * sizeof(double));
+    int weight_size = nw * nh * 2;
 
-    double init_weight = 1.0f / 2000.0f;
-    for(int i = 0; i < nw * nh; i ++) {
+    g_weight = (double*) malloc(weight_size * sizeof(double));
+
+    double init_weight = 1.0f / ((double)weight_size);
+    for(int i = 0; i < weight_size; i ++) {
         g_weight[i] = init_weight;
     }
-    write_file(WEIGHT_FILE, (char*)g_weight, nw * nh * sizeof(double));
+    write_file(WEIGHT_FILE, (char*)g_weight, weight_size * sizeof(double));
 
-    integ = (u32*) malloc(w * h * sizeof(u32));
+    integ1 = (u32*) malloc(w * h * sizeof(u32));
+    integ2 = (u32*) malloc(w * h * sizeof(u32));
 
-    int ret = g_haarlike.haarlike_integral(sample, integ, w, h);
+    g_haarlike.haarlike_integral(sample1, integ1, w, h);
+    g_haarlike.haarlike_integral(sample2, integ2, w, h);
 
     /*
      * Edge 0 & 1
     */
     s = 4;
     t = 2;
-    int *ftout = 0;
+
     int counter = 0;
     for(int i = s ; i <= sh; i += s ) {
 
@@ -144,15 +154,20 @@ int adaboost_train(u8* sample, int w, int h, int sw, int sh)
 
             for(int y = 0; y < sh - i + 1; y ++ ) {
                 for(int x = 0; x < sw - j + 1; x ++) {
-
-                    int siz = g_haarlike.haarlike_edge_horizon(integ, w, h, sw, sh, x, y, j, i, &ftout);
-
+                    int *ftout = NULL;
+                    int siz1 = g_haarlike.haarlike_edge_horizon(integ1, w, h, sw, sh, x, y, j, i, &ftout1);
+                    int siz2 = g_haarlike.haarlike_edge_horizon(integ2, w, h, sw, sh, x, y, j, i, &ftout2);
+                    int siz = siz1 + siz2;
 #if 0
                     for(int n = 0; n < siz; n ++) {
                         printf("%d ", ftout[n]);
                     }
                     printf("============================================\n");
 #endif
+                    ftout = (int*) malloc(siz * sizeof(int));
+
+                    memcpy(ftout, ftout1, siz1 * sizeof(int));
+                    memcpy(ftout + siz1, ftout2, siz2 * sizeof(int));
 
                     char file[256] = {0};
                     sprintf(file, "%s/f_v_%d_%d_%d_%d_%d_%d", FEATURE_PATH, x, y, j, i, 0, 0);
@@ -162,6 +177,8 @@ int adaboost_train(u8* sample, int w, int h, int sw, int sh)
                     g_classifiers.push_back(cls);
 
                     free(ftout);
+                    free(ftout1);
+                    free(ftout2);
                     ftout = 0;
                     counter ++;
                 }
@@ -180,14 +197,20 @@ int adaboost_train(u8* sample, int w, int h, int sw, int sh)
             for(int y = 0; y < sh - i + 1; y ++ ) {
                 for(int x = 0; x < sw - j + 1; x ++) {
 
-                    int siz = g_haarlike.haarlike_edge_vert(integ, w, h, sw, sh, x, y, j, i, &ftout);
-
+                    int *ftout = NULL;
+                    int siz1 = g_haarlike.haarlike_edge_horizon(integ1, w, h, sw, sh, x, y, j, i, &ftout1);
+                    int siz2 = g_haarlike.haarlike_edge_horizon(integ2, w, h, sw, sh, x, y, j, i, &ftout2);
+                    int siz = siz1 + siz2;
 #if 0
                     for(int n = 0; n < siz; n ++) {
                         printf("%d ", ftout[n]);
                     }
                     printf("============================================\n");
 #endif
+                    ftout = (int*) malloc(siz * sizeof(int));
+
+                    memcpy(ftout, ftout1, siz1 * sizeof(int));
+                    memcpy(ftout + siz1, ftout2, siz2 * sizeof(int));
 
                     char file[256] = {0};
                     sprintf(file, "%s/f_v_%d_%d_%d_%d_%d_%d", FEATURE_PATH, x, y, j, i, 0, 1);
@@ -197,6 +220,8 @@ int adaboost_train(u8* sample, int w, int h, int sw, int sh)
                     g_classifiers.push_back(cls);
 
                     free(ftout);
+                    free(ftout1);
+                    free(ftout2);
                     ftout = 0;
                     counter ++;
                 }
@@ -209,6 +234,10 @@ int adaboost_train(u8* sample, int w, int h, int sw, int sh)
     }
 
     for(int rt = 0; rt < TRAINING_TIMES; rt ++) {
+
+        /// update weight values
+        read_file(WEIGHT_FILE, (char*)g_weight, weight_size * sizeof(double));
+
         struct __clssf* wkcls = create_next_weak_clss(rt);
         int conflict = 0;
 
@@ -279,8 +308,6 @@ static int load_strong_clss_from_file(const char* file, __strong_clssf** strocls
     int nwk = 0;
     fread(&nwk, sizeof(int), 1, fd);
 
-
-
     for(int i = 0; i < nwk; i ++) {
         struct __clssf *pcls = (struct __clssf*) malloc(sizeof(struct __clssf));
         int siz = fread(pcls, sizeof(struct __clssf), 1, fd);
@@ -313,29 +340,57 @@ static struct __clssf* create_clssfier(int x, int y, int bw, int bh, int tt, int
     return cls;
 }
 
-
-static int statistic_clssfier(struct __clssf* cls, int *ftout, int siz) {
-
-    double thehold = 0;
+static int find_clssfier_best_threhold(int *ftout, int siz, double* weight, int* thre, double* em) {
+    int _threhold = 0;
+    double _em = 0;
+    double _min_em = 99999.0f;
+    int _min = 999999999;
+    int _max = -999999999;
     double I = 1.0f;
+
+    for(int i = 0; i < siz; i ++) {
+        _min = ftout[i] < _min ? ftout[i] : _min;
+        _max = ftout[i] > _max ? ftout[i] : _max;
+    }
+
+    for(int t = _min; t < _max; t ++) {
+        _em = 0.0f;
+
+        for(int i = 0; i < siz; i ++) {
+            if(i >= up_sample_from && i <= up_sample_to) {
+                if(ftout[i] < t) {
+                    _em += weight[i] * I;
+                }
+            }
+            else if(i >= down_sample_from && i <= down_sample_to) {
+                if(ftout[i] >= t) {
+                    _em += weight[i] * I;
+                }
+            }
+        }
+        if(_em < _min_em) {
+            _threhold = t;
+            _min_em = _em;
+        }
+    }
+
+    *thre = _threhold;
+    *em = _min_em;
+
+    return 0;
+}
+
+static int statistic_clssfier(struct __clssf* cls, int *ftout, int siz, double* weight) {
+
     double em = 0.0f;
     double am = 0.0f;
+    int wrong = 0;
 
-    read_file(WEIGHT_FILE, (char*)g_weight, siz * sizeof(double));
+    int threhold = 0;
 
-    thehold = 0;
-    for(int i = 0; i < siz; i ++) {
-        thehold += (1.0f / (double)siz * (double)(ftout[i]));
-    }
+    find_clssfier_best_threhold(ftout,siz, weight,&threhold, &em);
 
-    for(int i = 0; i < siz; i ++) {
-        ftout[i] = ftout[i] > thehold ? 1 : -1;
-    }
-
-    for(int i = 0; i < siz; i ++) {
-        if(ftout[i] == -1)
-            em += g_weight[i] * I;
-    }
+    cls->thrhd = threhold;
 
     double en = (1.0f - em) / em;
     double es = log(en);
@@ -383,7 +438,7 @@ static struct __clssf* create_next_weak_clss(int rt)
 
         read_file(file, (char*)ftout, siz * sizeof(int));
 
-        statistic_clssfier(p, ftout, siz);
+        statistic_clssfier(p, ftout, siz, g_weight);
 
         free(ftout);
     }
@@ -502,7 +557,9 @@ int adaboost_face_test(u8 *image, int image_block) {
      * (1) get integral image
     */
     double score1 = 0.0f;
+    double scoreav1 = 0.0f;
     double score2 = 0.0f;
+    double scoreav2 = 0.0f;
 
     u32* integral = (u32*) malloc(sizeof(u32) * image_block * image_block);
     g_haarlike.haarlike_integral(image, integral, image_block, image_block);
@@ -512,7 +569,7 @@ int adaboost_face_test(u8 *image, int image_block) {
 
     if(pstr_clss1 == 0 && pstr_clss2 == 0) {
         load_strong_clss_from_file(STRONG_CLASSFIER_FILE1, &pstr_clss1);
-        load_strong_clss_from_file(STRONG_CLASSFIER_FILE2, &pstr_clss2);
+        //load_strong_clss_from_file(STRONG_CLASSFIER_FILE2, &pstr_clss2);
     }
 
 
@@ -520,21 +577,24 @@ int adaboost_face_test(u8 *image, int image_block) {
     for( it = pstr_clss1->vwkcs.begin(); it != pstr_clss1->vwkcs.end(); it ++ ) {
         struct __clssf* p = *it;
         int fv = get_rect_face_fv(integral, image_block, p->x, p->y, p->bw, p->bh, p->tt, p->tn, SAMPLE_BLOCK_WIDTH);
-        score1 += (double)fv * -(p->am);
-    }
 
+        int rt = fv >= p->thrhd ? 1 : 0;
+        score1 += (double)rt * (p->am);
+        scoreav1 += 0.5f * p->am;
+    }
+/*
     for( it = pstr_clss2->vwkcs.begin(); it != pstr_clss2->vwkcs.end(); it ++ ) {
         struct __clssf* p = *it;
         int fv = get_rect_face_fv(integral, image_block, p->x, p->y, p->bw, p->bh, p->tt, p->tn, SAMPLE_BLOCK_WIDTH);
-        score2 += (double)fv * -(p->am);
+        score2 += (double)fv * (p->am);
     }
+*/
+    //score1 = score1 / pstr_clss1->nwk;
+    //score2 = score2 / pstr_clss2->nwk;
 
-    score1 = score1 / pstr_clss1->nwk;
-    score2 = score2 / pstr_clss2->nwk;
+    printf("%f                         %f\n", score1, scoreav1);
 
-    printf("%f  %f\n", score1, score2);
-
-    if(score1 > score2) {
+    if(score1 > scoreav1) {
         return 1;
     }
     return 0;

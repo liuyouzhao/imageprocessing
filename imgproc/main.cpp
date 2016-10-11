@@ -9,7 +9,7 @@ extern int adaboost_test_main();
 
 int main(int argc, char** argv)
 {
-    //adaboost_train_main();
-    adaboost_test_main();
+    adaboost_train_main();
+    //adaboost_test_main();
     return 0;
 }

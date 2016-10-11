@@ -8,7 +8,7 @@
 
 extern int adaboost_merge_samples(const char* path, int file_num,
                                     int nw, int nh, int sw, int sh, u8 **merged);
-extern int adaboost_train(u8* sample, int w, int h, int sw, int sh);
+extern int adaboost_train(u8* sample1, u8* sample2, int w, int h, int sw, int sh);
 
 extern int adaboost_face_test(u8 *image, int image_block);
 extern GreyProc g_grey;
@@ -21,15 +21,23 @@ extern GreyProc g_grey;
 */
 int adaboost_train_main() {
 
-    u8 *merged = 0;
-    adaboost_merge_samples(SAMPLE_PATH,
+    u8 *merged1 = 0;
+    u8 *merged2 = 0;
+    adaboost_merge_samples(SAMPLE1_PATH,
                             SAMPLE_NUMBER,
                             SAMPLE_MERGED_WIDTH,
                             SAMPLE_MERGED_HEIGHT,
                             SAMPLE_BLOCK_WIDTH,
-                            SAMPLE_BLOCK_WIDTH, &merged);
+                            SAMPLE_BLOCK_WIDTH, &merged1);
 
-    adaboost_train(merged, SAMPLE_MERGED_WIDTH*SAMPLE_BLOCK_WIDTH,
+    adaboost_merge_samples(SAMPLE2_PATH,
+                            SAMPLE_NUMBER,
+                            SAMPLE_MERGED_WIDTH,
+                            SAMPLE_MERGED_HEIGHT,
+                            SAMPLE_BLOCK_WIDTH,
+                            SAMPLE_BLOCK_WIDTH, &merged2);
+
+    adaboost_train(merged1, merged2, SAMPLE_MERGED_WIDTH*SAMPLE_BLOCK_WIDTH,
                             SAMPLE_MERGED_HEIGHT*SAMPLE_BLOCK_WIDTH,
                             SAMPLE_BLOCK_WIDTH, SAMPLE_BLOCK_WIDTH);
 
@@ -71,6 +79,12 @@ int adaboost_test_main() {
         for(int i = 0, i2 = (screen_height >> 1) - (block_size >> 1); i < block_size; i ++, i2 ++) {
             for(int j = 0, j2 = (screen_width >> 1) - (block_size >> 1); j < block_size; j ++, j2 ++) {
                 buf_target[i * block_size + j] = buf[i2 * screen_width + j2];
+            }
+        }
+
+        for(int i = 0, i2 = (screen_height >> 1) - (block_size >> 1); i < block_size; i ++, i2 ++) {
+            for(int j = 0, j2 = (screen_width >> 1) - (block_size >> 1); j < block_size; j ++, j2 ++) {
+                buf[i2 * screen_width + j2] = buf_target[i * block_size + j];
             }
         }
 

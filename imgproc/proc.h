@@ -15,7 +15,7 @@
 #define SAMPLE_NUMBER 2000
 #define SAMPLE_MERGED_WIDTH 50
 #define SAMPLE_MERGED_HEIGHT 40
-#define TRAINING_TIMES 40
+#define TRAINING_TIMES 20
 #define SAMPLE1_PATH "/home/hujia/workspace/imgproc/imageprocessing/imgproc/res/faces"
 #define SAMPLE2_PATH "/home/hujia/workspace/imgproc/imageprocessing/imgproc/res/nonfaces"
 
@@ -30,6 +30,7 @@
 
 #define SAMPLE_BLOCK_WIDTH 20
 
+#define THREHOLD_ACCURATE 50
 
 
 typedef unsigned char u8;
@@ -82,7 +83,7 @@ struct __clssf {
     u8 tt;
     u8 tn;
     u32 ss;
-    double thrhd;
+    int thrhd;
     double em;
     double am;
 };

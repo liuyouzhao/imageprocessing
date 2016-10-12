@@ -43,6 +43,7 @@
 			<Add option="-Wall" />
 			<Add option="-fexceptions" />
 		</Compiler>
+		<Unit filename="___backup_code___.cpp" />
 		<Unit filename="adaboost.cpp" />
 		<Unit filename="adaboost_main.cpp" />
 		<Unit filename="binary.cpp" />

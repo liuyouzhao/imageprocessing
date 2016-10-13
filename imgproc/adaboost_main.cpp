@@ -10,8 +10,9 @@ extern int adaboost_merge_samples(const char* path, int file_num,
                                     int nw, int nh, int sw, int sh, u8 **merged);
 extern int adaboost_train(u8* sample1, u8* sample2, int w, int h, int sw, int sh);
 
-extern int adaboost_face_test(u8 *image, int image_block);
+extern int adaboost_face_test(u8 *image, u8 *origin, int w, int h);
 extern GreyProc g_grey;
+extern std::vector<struct __possi_rect*> g_possi_rects;
 
 /**
 #define SAMPLE_BLOCK_WIDTH 20
@@ -43,23 +44,21 @@ int adaboost_train_main() {
 
     return 0;
 }
-
+#define WHOLE_PICTURE_TEST 0
+int adaboost_single_face_judge(u8 *image, int block);
 int adaboost_test_main() {
 
-    int screen_width = 320;
-    int screen_height = 240;
+    IplImage* p_frame = NULL;
+
+#if USE_CAMERA
+    int screen_width = 640;
+    int screen_height = 480;
 
     int block_size = 200;
-
-    CvCapture* p_capture = cvCreateCameraCapture(1);
+    CvCapture* p_capture = cvCreateCameraCapture(0);
 
     cvSetCaptureProperty(p_capture, CV_CAP_PROP_FRAME_WIDTH, screen_width);
     cvSetCaptureProperty(p_capture, CV_CAP_PROP_FRAME_HEIGHT, screen_height);
-
-    IplImage* p_frame = NULL;
-    IplImage* p_frame_grey = cvCreateImage(cvSize(screen_width, screen_height), IPL_DEPTH_8U, 1);
-
-    cvNamedWindow("video", 1);
 
     while(1)
     {
@@ -75,7 +74,7 @@ int adaboost_test_main() {
 
         g_grey.process((u8*)p_frame->imageData, buf, screen_width, screen_height, 1);
 
-
+/*
         for(int i = 0, i2 = (screen_height >> 1) - (block_size >> 1); i < block_size; i ++, i2 ++) {
             for(int j = 0, j2 = (screen_width >> 1) - (block_size >> 1); j < block_size; j ++, j2 ++) {
                 buf_target[i * block_size + j] = buf[i2 * screen_width + j2];
@@ -87,16 +86,157 @@ int adaboost_test_main() {
                 buf[i2 * screen_width + j2] = buf_target[i * block_size + j];
             }
         }
+*/
 
        // double score1 = adaboost_face_test(STRONG_CLASSFIER_FILE1, buf_target, block_size);
-        int isface = adaboost_face_test(buf_target, block_size);
+        int isface = adaboost_face_test(buf, (u8*)p_frame->imageData, screen_width, screen_height);
 
-        printf("%d\n", isface);
+        //printf("%d\n", isface);
 
-        memcpy(p_frame_grey->imageData, buf, screen_width * screen_height);
-        cvShowImage("video", p_frame_grey);
+        //memcpy(p_frame_grey->imageData, buf, screen_width * screen_height);
+        cvShowImage("video", p_frame);
 
         char c = cvWaitKey(33);
         if(c == 27) break;
     }
+#elif WHOLE_PICTURE_TEST
+    int screen_width = 640;
+    int screen_height = 480;
+
+    int block_size = 200;
+    cv::Mat src;
+    src = cv::imread(TEST_FILE);
+
+    p_frame = cvCreateImage(cvSize(screen_width, screen_height), IPL_DEPTH_8U, 1);
+
+    if(!src.data)
+    {
+        printf("Error! file is empty! \n");
+        return -1;
+    }
+
+    int nr = src.rows;
+    int nc = src.cols;
+    int c = src.channels();
+    u8 *image = (u8*)malloc(nr * nc * c);
+
+    int n = 0;
+    for(int i = 0; i < nr; i ++) {
+        uchar* data = src.ptr<uchar>(i);
+        for(int j = 0; j < nc; j ++) {
+            image[n] = data[j * c];
+            n ++;
+        }
+    }
+    //u8 *buf = (u8*)malloc(screen_width * screen_height);
+    //memset(buf, screen_width * screen_height, 0);
+
+    //g_grey.process(image, buf, screen_width, screen_height, 1);
+
+    adaboost_face_test(image, image, screen_width, screen_height);
+
+
+
+    memcpy(p_frame->imageData, image, p_frame->width * p_frame->height * p_frame->nChannels);
+
+    std::vector<struct __possi_rect*>::iterator it;
+    for(it = g_possi_rects.begin(); it < g_possi_rects.end(); it ++) {
+        struct __possi_rect* p = *it;
+        //cvCircle(p_frame, cvPoint(p->x + p->w / 2, p->y + p->h / 2), (int)(p->w)/2, CV_RGB(0,255,0), 2);
+        cvCircle(p_frame, cvPoint(p->x + p->w / 2, p->y + p->h / 2), 5, CV_RGB(0,255,0), 2);
+    }
+
+
+    while(1) {
+        cvShowImage("show", p_frame);
+        char k = cvWaitKey(33);
+    }
+#else
+#if 0
+    int screen_width = 20;
+    int screen_height = 20;
+
+    cv::Mat src;
+    src = cv::imread(TEST_FILE);
+
+    p_frame = cvCreateImage(cvSize(screen_width, screen_height), IPL_DEPTH_8U, 1);
+
+    if(!src.data)
+    {
+        printf("Error! file is empty! \n");
+        return -1;
+    }
+
+    int nr = src.rows;
+    int nc = src.cols;
+    int c = src.channels();
+    printf("c %d \n", c);
+
+    u8 *image = (u8*)malloc(nr * nc * c);
+
+    int n = 0;
+    for(int i = 0; i < nr; i ++) {
+        uchar* data = src.ptr<uchar>(i);
+        for(int j = 0; j < nc; j ++) {
+            image[n] = data[j * c];
+            n ++;
+        }
+    }
+    //u8 *buf = (u8*)malloc(screen_width * screen_height);
+    //memset(buf, screen_width * screen_height, 0);
+
+    //g_grey.process(image, buf, screen_width, screen_height, 1);
+
+    //adaboost_face_test(image, image, screen_width, screen_height);
+    memcpy(p_frame->imageData, image, p_frame->width * p_frame->height * p_frame->nChannels);
+
+    int ret = adaboost_single_face_judge(image, screen_width);
+    printf("ret: %d\n", ret);
+    while(1) {
+        cvShowImage("show", p_frame);
+        char k = cvWaitKey(33);
+    }
+#endif
+    int screen_width = 20;
+    int screen_height = 20;
+    u8 *image = 0;
+    int num_success = 0;
+    for(int num = 1; num <= 2000; num ++) {
+
+        char file[256] = {};
+        sprintf(file, "%s/%d.bmp", SAMPLE1_PATH, num);
+
+        cv::Mat src;
+        src = cv::imread(file);
+        if(!src.data)
+        {
+            printf("Error! file is empty! \n");
+            return -1;
+        }
+
+        int nr = src.rows;
+        int nc = src.cols;
+        int c = src.channels();
+
+        if(image == 0)
+            image = (u8*)malloc(nr * nc);
+
+        int n = 0;
+        for(int i = 0; i < nr; i ++) {
+            uchar* data = src.ptr<uchar>(i);
+            for(int j = 0; j < nc; j ++) {
+                image[n] = data[j * c];
+                n ++;
+            }
+        }
+        int ret = adaboost_single_face_judge(image, screen_width);
+
+        num_success = ret ? num_success + 1 : num_success;
+        printf("ret: %d\n", ret);
+    }
+    printf("2000 : %d\n", num_success);
+
+#endif
+
+
 }

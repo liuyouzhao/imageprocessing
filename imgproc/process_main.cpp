@@ -62,8 +62,6 @@ int process_main()
         if(c == 27) break;
     }
 
-
-
     cvReleaseCapture(&p_capture);
     cvDestroyWindow("video");
 

@@ -8,7 +8,7 @@
 
 extern int adaboost_merge_samples(const char* path, int file_num,
                                     int nw, int nh, int sw, int sh, u8 **merged);
-extern int adaboost_train(u8* sample1, u8* sample2, int w, int h, int sw, int sh);
+extern int adaboost_train(u8* sample1, u8* sample2, int w, int h, int bf = 0);
 
 extern int adaboost_face_test(u8 *image, u8 *origin, int w, int h);
 extern GreyProc g_grey;
@@ -39,12 +39,11 @@ int adaboost_train_main() {
                             SAMPLE_BLOCK_WIDTH, &merged2);
 
     adaboost_train(merged1, merged2, SAMPLE_MERGED_WIDTH*SAMPLE_BLOCK_WIDTH,
-                            SAMPLE_MERGED_HEIGHT*SAMPLE_BLOCK_WIDTH,
-                            SAMPLE_BLOCK_WIDTH, SAMPLE_BLOCK_WIDTH);
+                            SAMPLE_MERGED_HEIGHT*SAMPLE_BLOCK_WIDTH, 0);
 
     return 0;
 }
-#define WHOLE_PICTURE_TEST 0
+#define WHOLE_PICTURE_TEST 1
 int adaboost_single_face_judge(u8 *image, int block);
 int adaboost_test_main() {
 

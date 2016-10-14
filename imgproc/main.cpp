@@ -1,4 +1,5 @@
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
 #include "proc.h"
 
@@ -7,8 +8,28 @@ extern int feature_main(const char* file);
 extern int adaboost_train_main();
 extern int adaboost_test_main();
 extern int haarlike_integral(u8 *p, u32 *out, u32 w, u32 h);
+
+
 int main(int argc, char** argv)
 {
+#if 0
+    struct __feature_value **ok = (struct __feature_value**)malloc(10 * sizeof(struct __feature_value*));
+
+    for(int i = 0; i < 10; i ++)
+    {
+        ok[i] = new __feature_value();
+        ok[i]->value = 10 - i;
+        ok[i]->sample_id = i;
+    }
+
+    sort_fv_by_val(ok, 0, 9);
+
+    for(int i = 0; i < 10; i ++)
+    {
+        printf("%d %d\n", ok[i]->value, ok[i]->sample_id);
+    }
+    return 0;
+#endif
 /*
     u8 img[30] = {
         1, 1, 1, 1, 1, 1,

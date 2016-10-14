@@ -23,6 +23,11 @@
 					<Add library="../../../../../../usr/local/lib/libopencv_videoio.so" />
 					<Add library="../../../../../../usr/local/lib/libopencv_videostab.so" />
 					<Add library="../../../../../../usr/local/lib/libopencv_imgcodecs.so" />
+					<Add library="../../../../../../usr/local/lib/libopencv_videostab.so" />
+					<Add library="../../../../../../usr/local/lib/libopencv_videoio.so" />
+					<Add library="../../../../../../usr/local/lib/libopencv_video.so" />
+					<Add library="../../../../../../usr/local/lib/libopencv_imgcodecs.so" />
+					<Add library="../../../../../../usr/local/lib/libopencv_imgproc.so" />
 					<Add directory="../../../../../../usr/local/lib" />
 				</Linker>
 			</Target>
@@ -46,6 +51,7 @@
 		<Unit filename="___backup_code___.cpp" />
 		<Unit filename="adaboost.cpp" />
 		<Unit filename="adaboost_main.cpp" />
+		<Unit filename="adaboost_train.cpp" />
 		<Unit filename="binary.cpp" />
 		<Unit filename="convolute.cpp" />
 		<Unit filename="feature_main.cpp" />
@@ -56,6 +62,7 @@
 		<Unit filename="longedge.cpp" />
 		<Unit filename="main.cpp" />
 		<Unit filename="proc.h" />
+		<Unit filename="proc_utils.cpp" />
 		<Unit filename="process_main.cpp" />
 		<Extensions>
 			<code_completion />

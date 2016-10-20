@@ -411,7 +411,7 @@ int save_strong_clss_to_file(__strong_clssf* stroclssf) {
         fwrite(&am, sizeof(double), 1, fd);
         fwrite(&em, sizeof(double), 1, fd);
 
-        printf("[%d %d %d %d %d %d %d %d %f %f]\n", x, y, bw, bh, tt, tn, ss, thrhd, am, em);
+        printf("[%d %d %d %d [%d] %d %d %d %f %f]\n", x, y, bw, bh, tt, tn, ss, thrhd, am, em);
 
     }
 
@@ -522,7 +522,7 @@ static int find_clssfier_threhd_loss(struct __feature_value** fv_arr, int siz,
                     int* thre, double* em_out, int *tn) {
 
     int fv_all_size = siz;
-#if 0
+#if 1
     double t_up, t_down, s_up, s_down;
     t_up = t_down = s_up = s_down = 0.0f;
     int tmp_thrhd = 0;
@@ -530,10 +530,12 @@ static int find_clssfier_threhd_loss(struct __feature_value** fv_arr, int siz,
     int fv_down_size = down_sample_to - down_sample_from + 1;
     double em_min = 999999.9f;
     double _em = 0.0f;
+    double _em1 = 0.0f;
+    double _em2 = 0.0f;
     int tmp_tn = 0;
 #endif
 
-#if 1
+#if 0
     double em_min = 999999.9f;
     int tmp_tn = 0;
 
@@ -644,7 +646,7 @@ static int find_clssfier_threhd_loss(struct __feature_value** fv_arr, int siz,
 
     }
 #endif
-#if 0
+#if 1
 
     struct __feature_value** all_nfvs = (struct __feature_value**)malloc(fv_all_size * sizeof(struct __feature_value*));
 
@@ -710,7 +712,7 @@ static int find_clssfier_threhd_loss(struct __feature_value** fv_arr, int siz,
     for(int i = 0; i < fv_all_size; i ++)
     {
         int tt = all_nfvs[i]->value;
-
+        int tt2 = 0;
         if(all_nfvs[i]->up_down == 1)
         {
             s_up = _up_wt_integral[all_nfvs[i]->index];
@@ -722,6 +724,7 @@ static int find_clssfier_threhd_loss(struct __feature_value** fv_arr, int siz,
                 {
                     s_down = _down_wt_integral[all_nfvs[j]->index];
                     find = 1;
+                    tt2 = all_nfvs[j]->value;
                     break;
                 }
             }
@@ -734,6 +737,7 @@ static int find_clssfier_threhd_loss(struct __feature_value** fv_arr, int siz,
                     {
                         s_down = _down_wt_integral[all_nfvs[j]->index];
                         find = 1;
+                        tt2 = all_nfvs[j]->value;
                         break;
                     }
                 }
@@ -751,6 +755,7 @@ static int find_clssfier_threhd_loss(struct __feature_value** fv_arr, int siz,
                 {
                     s_up = _up_wt_integral[all_nfvs[j]->index];
                     find = 1;
+                    tt2 = all_nfvs[j]->value;
                     break;
                 }
             }
@@ -763,10 +768,10 @@ static int find_clssfier_threhd_loss(struct __feature_value** fv_arr, int siz,
                     {
                         s_up = _up_wt_integral[all_nfvs[j]->index];
                         find = 1;
+                        tt2 = all_nfvs[j]->value;
                         break;
                     }
                 }
-
             }
         }
         if(s_up < -9998.0f || s_down < -9998.0f)
@@ -784,8 +789,16 @@ static int find_clssfier_threhd_loss(struct __feature_value** fv_arr, int siz,
         {
             em_min = _em;
             tmp_tn = em1 < em2 ? 0 : 1;
-            tmp_thrhd = tt;
+            _em1 = em1;
+            _em2 = em2;
+            tmp_thrhd = (tt + tt2) / 2;
         }
+    }
+
+
+    for(int i = 0; i < fv_all_size; i ++)
+    {
+        global_loss[i] = 0;
     }
 
     for(int i = 0; i < fv_all_size; i ++)
@@ -796,14 +809,14 @@ static int find_clssfier_threhd_loss(struct __feature_value** fv_arr, int siz,
 
         if(tmp_tn == 0)
         {
-            if(sample_id >= up_sample_from || sample_id <= up_sample_to)
+            if(fv_arr[i]->up_down == 1)
             {
                 if(fv_arr[i]->value < tmp_thrhd)
                 {
                     global_loss[sample_id] = -1;
                 }
             }
-            else if(sample_id >= down_sample_from || sample_id <= down_sample_to)
+            else if(fv_arr[i]->up_down == -1)
             {
                 if(fv_arr[i]->value > tmp_thrhd)
                 {
@@ -813,14 +826,14 @@ static int find_clssfier_threhd_loss(struct __feature_value** fv_arr, int siz,
         }
         else if(tmp_tn == 1)
         {
-            if(sample_id >= up_sample_from || sample_id <= up_sample_to)
+            if(fv_arr[i]->up_down == 1)
             {
                 if(fv_arr[i]->value > tmp_thrhd)
                 {
                     global_loss[sample_id] = -1;
                 }
             }
-            else if(sample_id >= down_sample_from || sample_id <= down_sample_to)
+            else if(fv_arr[i]->up_down == -1)
             {
                 if(fv_arr[i]->value < tmp_thrhd)
                 {
@@ -828,6 +841,15 @@ static int find_clssfier_threhd_loss(struct __feature_value** fv_arr, int siz,
                 }
             }
 
+        }
+
+    }
+
+    for(int i = 0; i < fv_all_size; i ++)
+    {
+        if(global_loss[i] == 0)
+        {
+            printf("\n\n[ERROR] HUGE ERROR %d %d is 0\n\n", i, global_loss[i]);
         }
 
     }
@@ -896,6 +918,7 @@ int statistic_clssfier(struct __clssf* cls, struct __feature_value** fv,
     return 0;
 }
 
+
 struct __clssf* create_next_weak_clss(double* weights, int* loss, int length) {
 
     /*
@@ -903,13 +926,15 @@ struct __clssf* create_next_weak_clss(double* weights, int* loss, int length) {
      * Get the BEST ONE!
     */
     double min_em = 9999999.0f;
+    int *temp_loss = (int*)malloc(length * sizeof(int));
+    memset(temp_loss, 0, length * sizeof(int));
 
     struct __clssf* p_best = (struct __clssf*)malloc(sizeof(struct __clssf));
 
     int counter = 0;
 
 
-
+    std::vector<struct __clssf*>::iterator it_erase;
     std::vector<struct __clssf*>::iterator it;
     for( it = g_classifiers.begin(); it != g_classifiers.end(); it ++ ) {
 
@@ -931,16 +956,18 @@ struct __clssf* create_next_weak_clss(double* weights, int* loss, int length) {
         load_fv_from_file(file1, fv_arr, length);
 
 
-        statistic_clssfier(p, fv_arr, length, weights, loss);
+        statistic_clssfier(p, fv_arr, length, weights, temp_loss);
 
         //if(counter % 10000 == 0) {
         //    printf("[%d] %d %f %d \n", counter, p->thrhd, p->em, p->tn);
         //}
-        printf("[%d] %d %f %d \n", counter, p->thrhd, p->em, p->tn);
+        //printf("[%d] %d %f %d \n", counter, p->thrhd, p->em, p->tn);
 
         if(min_em > p->em) {
+            memcpy(loss, temp_loss, length * sizeof(int));
             memcpy(p_best, p, sizeof(struct __clssf));
             min_em = p->em;
+            it_erase = it;
             printf("Find Smaller: [%d] %d %f %d \n", counter, p->thrhd, p->em, p->tn);
         }
 
@@ -957,6 +984,8 @@ struct __clssf* create_next_weak_clss(double* weights, int* loss, int length) {
     min_em = p_best->em;
 
     printf("weak classifier %d %d %d %d  \n", p_best->x, p_best->y, p_best->bw, p_best->bh);
+
+    g_classifiers.erase(it_erase);
 
     return p_best;
 }
@@ -977,6 +1006,8 @@ static int get_rect_face_fv( u32* integral,
     int _bh = 0;
     _x = x * (wblock / sample_block);
     _y = y * (wblock / sample_block);
+    _x += wx;
+    _y += wy;
 
     _bw = block_width * (wblock / sample_block);
     _bh = block_height * (wblock / sample_block);
@@ -1006,6 +1037,8 @@ static int adaboost_jump_block_face(u32* integral, int w, int h,
                                     int wx, int wy, int wblock, __strong_clssf* pstr_clss) {
     double score = 0.0f;
     double scoreav = 0.0f;
+    int yes = 0;
+    int all = 0;
 
     std::vector<struct __clssf*>::iterator it;
     for( it = pstr_clss->vwkcs.begin(); it != pstr_clss->vwkcs.end(); it ++ ) {
@@ -1019,25 +1052,28 @@ static int adaboost_jump_block_face(u32* integral, int w, int h,
         score += (double)rt * (p->am);
         scoreav += 0.5f * p->am;
 #else
+        all ++;
         if(p->tn == 0)
         {
             int rt = fv >= p->thrhd ? 1 : 0;
             score += (double)rt * (p->am);
             scoreav += 0.5f * p->am;
+            if(fv >= p->thrhd) yes ++;
         }
         else
         {
             int rt = fv < p->thrhd ? 1 : 0;
             score += (double)rt * (p->am);
             scoreav += 0.5f * p->am;
+            if(fv < p->thrhd) yes ++;
         }
 #endif
 
         //printf("%d, %f     %f [%d  %d]\n", rt, score, scoreav, p->thrhd, fv);
     }
-    printf("score: %f        scoreav: %f \n",  score, scoreav);
+    printf("score: %f        scoreav: %f  %d %d\n",  score, scoreav, yes, all);
     if(score > scoreav) {
-        return 1;
+        return (int)(10000 * (score - scoreav));
     }
     return 0;
 }
@@ -1076,6 +1112,22 @@ void get_block_data(u8* src, int w, int h, u8* dst, int x, int y, int block) {
     }
 }
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+struct __possi_rect** faces_value = 0;
 int adaboost_face_test(u8 *image, u8 *origin, int w, int h) {
 
     /**
@@ -1099,37 +1151,64 @@ int adaboost_face_test(u8 *image, u8 *origin, int w, int h) {
 
     g_possi_rects.clear();
 
-    window_size = 50;
+    window_size = 60;
+
+    int max_faces = 1024;
 
     u8 *imgb = (u8*)malloc(window_size * window_size);
-    //u32* integral = (u32*) malloc(sizeof(u32) * window_size * window_size);
+    u32* integral = (u32*) malloc(sizeof(u32) * w * h);
+    g_haarlike.haarlike_integral(image, integral, w, h);
 
+#if 0
+    for(int nor = 4; nor < 9; nor ++)
+    {
+#endif
     int normal_jump = 10;
     x = y = 0;
     jump_x = (x + normal_jump) + window_size >= w ? (w - x - window_size) : normal_jump;
     jump_y = (y + normal_jump) + window_size >= h ? (h - y - window_size) : normal_jump;
 
+
+
+    faces_value = (struct __possi_rect**)malloc(sizeof(struct __possi_rect) * max_faces);
+
+    memset(faces_value, 0, sizeof(struct __possi_rect*) * max_faces);
+
+    for(int i = 0; i < max_faces; i ++)
+    {
+        faces_value[i] = (struct __possi_rect*)malloc(sizeof(struct __possi_rect));
+        faces_value[i]->rt = 0;
+    }
+
+    int face_index = 0;
+
     for(y = 0; y + window_size <= h - 1; y += jump_y) {
         for(x = 0; x + window_size <= w - 1; x += jump_x) {
 
             get_block_data(image, w, h, imgb, x, y, window_size);
-            //rt = adaboost_jump_block_face(integral, w, h, x, y, window_size, pstr_clss);
+            rt = adaboost_jump_block_face(integral, w, h, x, y, window_size, pstr_clss);
 
-            rt = adaboost_single_face_judge(imgb, window_size);
+            //rt = adaboost_single_face_judge(imgb, window_size);
 
-            if(rt) {
-                struct __possi_rect* prt = (struct __possi_rect*)malloc(sizeof(struct __possi_rect));
-                prt->x = x;
-                prt->y = y;
-                prt->w = window_size;
-                prt->h = window_size;
-                g_possi_rects.push_back(prt);
+            if(rt && face_index < max_faces)
+            {
+                faces_value[face_index]->x = x;
+                faces_value[face_index]->y = y;
+                faces_value[face_index]->w = window_size;
+                faces_value[face_index]->h = window_size;
+                faces_value[face_index]->rt = rt;
+                face_index ++;
+
+                //g_possi_rects.push_back(prt);
                 //adaboost_mark_face(origin, w, rt, x, y, window_size, window_size);
             }
         }
     }
 
-    printf("find %d faces \n", g_possi_rects.size());
+    sort_fv_by_val(faces_value, 0, max_faces - 1);
+
+
+    printf("find %d faces \n", face_index);
     //window_size += 1;
 
 #if 0

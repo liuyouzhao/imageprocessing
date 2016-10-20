@@ -4,6 +4,10 @@
 #include <vector>
 #include <string.h>
 
+#include "cv.h"
+#include "highgui.h"
+#include "imgcodecs.hpp"
+
 #include "proc.h"
 #include "proc_utils.h"
 
@@ -35,6 +39,7 @@ int save_strong_clss_to_file(__strong_clssf* stroclssf);
 int save_weak_clss_to_file( const char* file, struct __clssf* weak_clssf);
 int save_clssf_index();
 int load_clssf_index();
+int mat_to_u8arr(cv::Mat src, u8* dst, int w, int h);
 
 __MEMORY_BUFFERED__
 static int init()
@@ -121,9 +126,9 @@ static int generate_all_feature_values_and_clssfid(u32* integ1, u32* integ2, int
         g_haarlike.haarlike_point
     };
 
-    u8 _t_arr[__temp_kinds] = {4, 8, 3, 9, 4};
-    u8 _s_arr[__temp_kinds] = {8, 4, 9, 3, 4};
-    u8 _tt_arr[__temp_kinds] = {0, 1, 2, 3, 4};
+    u8 _t_arr[__temp_kinds] = T_ARR;
+    u8 _s_arr[__temp_kinds] = S_ARR;
+    u8 _tt_arr[__temp_kinds] = TT_ARR;
 
     for(int temp = 0; temp < __temp_kinds; temp ++)
     {
@@ -142,6 +147,10 @@ static int generate_all_feature_values_and_clssfid(u32* integ1, u32* integ2, int
                         int *fv_up = 0;
                         int *fv_down = 0;
 
+                        if((j % t) != 0 || (i % s) != 0)
+                        {
+                            printf("[ERROR]  j or i wrong! %d\n", j, i);
+                        }
                         int siz1 = _p_fv_creater_arr[temp](integ1, w, h, sw, sh, x, y, j, i, &fv_up);
                         int siz2 = _p_fv_creater_arr[temp](integ2, w, h, sw, sh, x, y, j, i, &fv_down);
                         int siz = siz1 + siz2;
@@ -168,7 +177,6 @@ static int generate_all_feature_values_and_clssfid(u32* integ1, u32* integ2, int
     save_clssf_index();
 }
 
-
 /*********
 * (4) Do limits numbers' iteration, get all Weak Classifiers
 **************/
@@ -188,9 +196,9 @@ static int do_iterator_weak_clssfier(int begin_from)
 
         recalculate_weights(wkcls, g_weights, g_loss);
 
-        for(int i = 0; i < max_number_samples; i ++) {
-            printf("%f ", g_weights[i]);
-        }
+        //for(int i = 0; i < max_number_samples; i ++) {
+         //   printf("%f ", g_weights[i]);
+        //}
 
 
         memset(file, 0, 512);
@@ -205,6 +213,10 @@ static int do_iterator_weak_clssfier(int begin_from)
 
         printf("the %d weak classifier created [%f  %f]  %d [%d%d]\n", rt, wkcls->am, wkcls->em, wkcls->thrhd, wkcls->tt, wkcls->tn);
 
+        if(wkcls->em > 0.5f)
+        {
+            break;
+        }
         //free(wkcls);
         g_strocls->vwkcs.push_back(wkcls);
         g_strocls->nwk ++;
@@ -216,7 +228,6 @@ static int do_iterator_weak_clssfier(int begin_from)
     return 0;
 }
 
-
 int adaboost_train(u8* sample1, u8* sample2, int w, int h, int iter_from)
 {
     u32* integral1 = NULL;
@@ -224,10 +235,13 @@ int adaboost_train(u8* sample1, u8* sample2, int w, int h, int iter_from)
 
     ///1
     init();
+
     ///2
     load_samples_get_integral(sample1, sample2, &integral1, &integral2, w, h);
+
     ///3
     generate_all_feature_values_and_clssfid(integral1, integral2, w, h);
+
     //load_clssf_index();
 
     ///4

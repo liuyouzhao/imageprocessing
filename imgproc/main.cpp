@@ -9,9 +9,26 @@ extern int adaboost_train_main();
 extern int adaboost_test_main();
 extern int haarlike_integral(u8 *p, u32 *out, u32 w, u32 h);
 
-
+extern HaarlikeProc g_haarlike;
 int main(int argc, char** argv)
 {
+#if 0
+    u32 inte[9] = {
+        1, 2, 3,
+        2, 4, 6,
+        3, 6, 9
+    };
+    int* fv = 0;
+    int siz = g_haarlike.haarlike_edge_horizon(inte, 3, 3, 3, 3, 2, 1, 2, 1, &fv);
+    for(int i = 0; i < siz; i ++)
+    {
+        printf("%d\n", fv[i]);
+    }
+    return 0;
+
+#endif
+
+
 #if 0
     struct __feature_value **ok = (struct __feature_value**)malloc(10 * sizeof(struct __feature_value*));
 
@@ -69,7 +86,11 @@ int main(int argc, char** argv)
 #if LETS_GO_TEST
     adaboost_test_main();
 #else
+#if PROCESS_SHOW
+    process_main();
+#else
     adaboost_train_main();
+#endif
 #endif
     //adaboost_train_main();
 

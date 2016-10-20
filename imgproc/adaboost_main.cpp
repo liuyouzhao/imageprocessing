@@ -9,10 +9,14 @@
 extern int adaboost_merge_samples(const char* path, int file_num,
                                     int nw, int nh, int sw, int sh, u8 **merged);
 extern int adaboost_train(u8* sample1, u8* sample2, int w, int h, int bf = 0);
+extern int adaboost_train(int bf = 0);
 
 extern int adaboost_face_test(u8 *image, u8 *origin, int w, int h);
 extern GreyProc g_grey;
 extern std::vector<struct __possi_rect*> g_possi_rects;
+extern struct __possi_rect** faces_value;
+
+void show_image(u8* buffer, int w, int h);
 
 /**
 #define SAMPLE_BLOCK_WIDTH 20
@@ -22,6 +26,7 @@ extern std::vector<struct __possi_rect*> g_possi_rects;
 */
 int adaboost_train_main() {
 
+#if 1
     u8 *merged1 = 0;
     u8 *merged2 = 0;
     adaboost_merge_samples(SAMPLE1_PATH,
@@ -38,8 +43,14 @@ int adaboost_train_main() {
                             SAMPLE_BLOCK_WIDTH,
                             SAMPLE_BLOCK_WIDTH, &merged2);
 
+    show_image(merged1, SAMPLE_MERGED_WIDTH*SAMPLE_BLOCK_WIDTH, SAMPLE_MERGED_HEIGHT*SAMPLE_BLOCK_WIDTH);
+    show_image(merged2, SAMPLE_MERGED_WIDTH*SAMPLE_BLOCK_WIDTH, SAMPLE_MERGED_HEIGHT*SAMPLE_BLOCK_WIDTH);
+
     adaboost_train(merged1, merged2, SAMPLE_MERGED_WIDTH*SAMPLE_BLOCK_WIDTH,
                             SAMPLE_MERGED_HEIGHT*SAMPLE_BLOCK_WIDTH, 0);
+#else
+    adaboost_train();
+#endif
 
     return 0;
 }
@@ -138,11 +149,21 @@ int adaboost_test_main() {
 
     memcpy(p_frame->imageData, image, p_frame->width * p_frame->height * p_frame->nChannels);
 
-    std::vector<struct __possi_rect*>::iterator it;
-    for(it = g_possi_rects.begin(); it < g_possi_rects.end(); it ++) {
-        struct __possi_rect* p = *it;
+    //std::vector<struct __possi_rect*>::iterator it;
+    //for(it = g_possi_rects.begin(); it < g_possi_rects.end(); it ++) {
+    int drawed = 0;
+    for(int i = 1023; i >= 0 && drawed < 10; i --) {
+
+        struct __possi_rect* p = faces_value[i];
+        if(!p || p->rt == 0) continue;
+
+
         //cvCircle(p_frame, cvPoint(p->x + p->w / 2, p->y + p->h / 2), (int)(p->w)/2, CV_RGB(0,255,0), 2);
-        cvCircle(p_frame, cvPoint(p->x + p->w / 2, p->y + p->h / 2), 5, CV_RGB(0,255,0), 2);
+
+        //cvCircle(p_frame, cvPoint(p->x + p->w / 2, p->y + p->h / 2), 5, CV_RGB(0,255,0), 2);
+        drawed ++;
+        cvRectangle(p_frame, cvPoint(p->x, p->y), cvPoint(p->x + p->w, p->y + p->h), CV_RGB(0,255,0), 2);
+        //cvRect(p_frame, p->x, p->y, p->w, p->h);
     }
 
 
@@ -200,7 +221,7 @@ int adaboost_test_main() {
     int screen_height = 20;
     u8 *image = 0;
     int num_success = 0;
-    for(int num = 1; num <= 2000; num ++) {
+    for(int num = 2001; num <= 2700; num ++) {
 
         char file[256] = {};
         sprintf(file, "%s/%d.bmp", SAMPLE1_PATH, num);

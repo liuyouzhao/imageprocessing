@@ -8,13 +8,14 @@
 
 #define COLOR_RGBA 1
 
-#define LETS_GO_TEST 0
+#define LETS_GO_TEST 1
+#define PROCESS_SHOW 0
 
 
 #define SAMPLE_NUMBER 2000
 #define SAMPLE_MERGED_WIDTH 50
 #define SAMPLE_MERGED_HEIGHT 40
-#define TRAINING_TIMES 50
+#define TRAINING_TIMES 200
 #define SAMPLE1_PATH "/home/hujia/workspace/imgproc/imageprocessing/imgproc/res/faces"
 #define SAMPLE2_PATH "/home/hujia/workspace/imgproc/imageprocessing/imgproc/res/nonfaces"
 
@@ -30,12 +31,16 @@
 
 #define WEIGHT_LOSS_PATH "/home/hujia/workspace/imgproc/imageprocessing/imgproc/train/weights"
 
-#define TEST_FILE "/home/hujia/workspace/imgproc/imageprocessing/imgproc/res/tests/test.jpg"
-//#define TEST_FILE "/home/hujia/workspace/imgproc/imageprocessing/imgproc/res/tests/22.bmp"
+#define TEST_FILE "/home/hujia/workspace/imgproc/imageprocessing/imgproc/res/tests/test4.jpg"
+//#define TEST_FILE "/home/hujia/workspace/imgproc/imageprocessing/imgproc/res/tests/test.jpg"
 
 #define SAMPLE_BLOCK_WIDTH 20
 
 #define THREHOLD_ACCURATE 40
+
+#define T_ARR {1, 2, 1, 3, 2}
+#define S_ARR {2, 1, 3, 1, 2}
+#define TT_ARR {0, 1, 2, 3, 4}
 
 typedef unsigned char u8;
 typedef unsigned int u32;
@@ -101,6 +106,10 @@ struct __clssf {
     int thrhd;
     double em;
     double am;
+
+
+    int fv_len;
+    int* fvs;
 };
 
 class __strong_clssf {
@@ -114,12 +123,15 @@ struct __possi_rect {
     int y;
     int w;
     int h;
+    int rt;
 };
 
 void sort(int *a, int left, int right);
 void sort_fv_by_val(struct __feature_value **fv, int left, int right);
+void sort_fv_by_val(struct __possi_rect **rects, int left, int right);
 
 int read_file(const char* file, char* data, int len);
 int write_file(const char* file, char* data, int len);
 int write_file_by_id(const char* header, int x, int y, int bw, int bh, int tt, int tn, char* data, int len);
+
 #endif // PROC_H_INCLUDED

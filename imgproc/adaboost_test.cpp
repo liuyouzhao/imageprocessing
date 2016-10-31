@@ -1,64 +1,152 @@
-
 #include <stdio.h>
 #include <stdlib.h>
+#include <math.h>
+#include <vector>
+
 #include "proc.h"
+#include "proc_utils.h"
+
 #include "cv.h"
 #include "highgui.h"
 #include "imgcodecs.hpp"
 
-extern int adaboost_merge_samples(const char* path, int file_num,
-                                    int nw, int nh, int sw, int sh, u8 **merged);
-extern int adaboost_train(u8* sample1, u8* sample2, int w, int h, int bf = 0);
-extern int adaboost_train(int bf = 0);
+#define WHOLE_PICTURE_TEST 1
 
-extern int adaboost_face_test(u8 *image, u8 *origin, int w, int h);
-extern GreyProc g_grey;
-extern std::vector<struct __possi_rect*> g_possi_rects;
-extern struct __possi_rect** faces_value;
+struct __possi_rect** faces_value = 0;
+int load_strong_clss_from_file(const char* file, __strong_clssf** stroclssf);
+extern HaarlikeProc g_haarlike;
 
-void show_image(u8* buffer, int w, int h);
+int adaboost_single_face_judge(u8 *image, int block);
+static int get_rect_face_fv( u32* integral,
+                             int w, int h,
+                             int wx, int wy,
+                             int wblock,
+                             int x, int y,
+                             int block_width, int block_height,
+                             int template_type, int template_index,
+                             int sample_block );
 
-/**
-#define SAMPLE_BLOCK_WIDTH 20
-#define SAMPLE_NUMBER 2000
-#define SAMPLE_MERGED_WIDTH 50
-#define SAMPLE_MERGED_HEIGHT 40
-*/
-int adaboost_train_main() {
 
-#if 1
-    u8 *merged1 = 0;
-    u8 *merged2 = 0;
-    adaboost_merge_samples(SAMPLE1_PATH,
-                            SAMPLE_NUMBER,
-                            SAMPLE_MERGED_WIDTH,
-                            SAMPLE_MERGED_HEIGHT,
-                            SAMPLE_BLOCK_WIDTH,
-                            SAMPLE_BLOCK_WIDTH, &merged1);
+static int adaboost_jump_block_face(u32* integral, int w, int h,
+                                    int start_x, int start_y, int window, __strong_clssf* pstr_clss)
+{
+    double score = 0.0f;
+    double scoreav = 0.0f;
+    int yes = 0;
+    int all = 0;
 
-    adaboost_merge_samples(SAMPLE2_PATH,
-                            SAMPLE_NUMBER,
-                            SAMPLE_MERGED_WIDTH,
-                            SAMPLE_MERGED_HEIGHT,
-                            SAMPLE_BLOCK_WIDTH,
-                            SAMPLE_BLOCK_WIDTH, &merged2);
+    std::vector<struct __clssf*>::iterator it;
+    for( it = pstr_clss->vwkcs.begin(); it != pstr_clss->vwkcs.end(); it ++ ) {
+        struct __clssf* p = *it;
+        int fv = get_rect_face_fv(integral, w, h,
+                                    start_x, start_y, window,
+                                    p->x, p->y, p->bw, p->bh, p->tt, p->tn, SAMPLE_BLOCK_WIDTH);
 
-    show_image(merged1, SAMPLE_MERGED_WIDTH*SAMPLE_BLOCK_WIDTH, SAMPLE_MERGED_HEIGHT*SAMPLE_BLOCK_WIDTH);
-    show_image(merged2, SAMPLE_MERGED_WIDTH*SAMPLE_BLOCK_WIDTH, SAMPLE_MERGED_HEIGHT*SAMPLE_BLOCK_WIDTH);
-
-    adaboost_train(merged1, merged2, SAMPLE_MERGED_WIDTH*SAMPLE_BLOCK_WIDTH,
-                            SAMPLE_MERGED_HEIGHT*SAMPLE_BLOCK_WIDTH, 0);
+#if 0
+        int rt = fv >= p->thrhd ? 1 : 0;
+        score += (double)rt * (p->am);
+        scoreav += 0.5f * p->am;
 #else
-    adaboost_train();
+        all ++;
+        if(p->tn == 0)
+        {
+            int rt = fv >= p->thrhd ? 1 : 0;
+            score += (double)rt * (p->am);
+            scoreav += 0.5f * p->am;
+            if(fv >= p->thrhd) yes ++;
+        }
+        else
+        {
+            int rt = fv < p->thrhd ? 1 : 0;
+            score += (double)rt * (p->am);
+            scoreav += 0.5f * p->am;
+            if(fv < p->thrhd) yes ++;
+        }
 #endif
 
+        //printf("%d, %f     %f [%d  %d]\n", rt, score, scoreav, p->thrhd, fv);
+    }
+    //printf("score: %f        scoreav: %f  %d %d\n",  score, scoreav, yes, all);
+    if(score > scoreav) {
+        return (int)(10000 * (score - scoreav));
+    }
     return 0;
 }
-#define WHOLE_PICTURE_TEST 1
-#if 0
-int adaboost_single_face_judge(u8 *image, int block);
-int adaboost_test_main() {
 
+static int get_rect_face_fv( u32* integral,
+                             int w, int h,
+                             int wx, int wy,
+                             int wblock,
+                             int x, int y,
+                             int block_width, int block_height,
+                             int template_type, int template_index,
+                             int sample_block )
+{
+
+    int _x = 0;
+    int _y = 0;
+    int _bw = 0;
+    int _bh = 0;
+    _x = (int)((double)x * ((double)wblock / (double)sample_block));
+    _y = (int)((double)y * ((double)wblock / (double)sample_block));
+    _x += wx;
+    _y += wy;
+
+    _bw = block_width * ((double)wblock / (double)sample_block);
+    _bh = block_height * ((double)wblock / (double)sample_block);
+    int *ftout = 0;
+    int fv = 0;
+
+    int (*_p_fv_creater_arr[5]) (
+            u32 *integ, u32 w, u32 h,
+            u32 sw, u32 sh,
+            u8 x, u8 y, u8 bw, u8 bh, int **ftout) =
+    {
+        g_haarlike.haarlike_edge_vert,
+        g_haarlike.haarlike_edge_horizon,
+        g_haarlike.haarlike_linear_vert,
+        g_haarlike.haarlike_linear_horizon,
+        g_haarlike.haarlike_point
+    };
+
+    _p_fv_creater_arr[template_type](integral, w, h, w, h, _x, _y, _bw, _bh, &ftout);
+    fv = (double)(ftout[0]) / ((double)wblock / (double)sample_block);
+    //fv = ftout[0];
+    free(ftout);
+    return fv;
+}
+
+int adaboost_face_test(IplImage* p_frame, u8 *image, int w, int h)
+{
+    u32* integral = (u32*) malloc(w * h * sizeof(int));
+
+    struct __strong_clssf* _str_clssf;
+
+    load_strong_clss_from_file(STRONG_CLASSFIER_FILE, &_str_clssf);
+
+    g_haarlike.haarlike_integral(image, integral, w, h);
+
+    int block = 20;
+    int max_block = 26;
+    for(; block < max_block; block += 2)
+    {
+        for(int i = 0; i < h - block; i += 2)
+        {
+            for(int j = 0; j < w - block; j += 2)
+            {
+                int rt = adaboost_jump_block_face(integral, w, h, j, i, block, _str_clssf);
+                //printf("%d ----\n", rt);
+                if(rt)
+                    cvRectangle(p_frame, cvPoint(j, i), cvPoint(j + block, i + block), CV_RGB(255,255,255), 2);
+            }
+        }
+
+    }
+
+}
+
+int adaboost_test_main()
+{
 
     IplImage* p_frame = NULL;
 
@@ -115,11 +203,15 @@ int adaboost_test_main() {
     int screen_width = 640;
     int screen_height = 480;
 
+    int target_width = 320;
+    int target_height = 240;
+    int b = 2;
+
     int block_size = 200;
     cv::Mat src;
     src = cv::imread(TEST_FILE);
 
-    p_frame = cvCreateImage(cvSize(screen_width, screen_height), IPL_DEPTH_8U, 1);
+    p_frame = cvCreateImage(cvSize(target_width, target_height), IPL_DEPTH_8U, 1);
 
     if(!src.data)
     {
@@ -131,6 +223,7 @@ int adaboost_test_main() {
     int nc = src.cols;
     int c = src.channels();
     u8 *image = (u8*)malloc(nr * nc * c);
+    u8 *image2 = (u8*)malloc(target_height * target_width * c);
 
     int n = 0;
     for(int i = 0; i < nr; i ++) {
@@ -140,19 +233,30 @@ int adaboost_test_main() {
             n ++;
         }
     }
+
+    for(int i = 0, i2 = 0; i2 < target_height; i += b, i2 ++)
+    {
+        for(int j = 0, j2 = 0; j2 < target_width; j += b, j2 ++)
+        {
+            image2[i2 * target_width + j2] = image[i * screen_width + j];
+        }
+    }
     //u8 *buf = (u8*)malloc(screen_width * screen_height);
     //memset(buf, screen_width * screen_height, 0);
 
     //g_grey.process(image, buf, screen_width, screen_height, 1);
 
-    adaboost_face_test(image, image, screen_width, screen_height);
+    //adaboost_face_test(image, image, screen_width, screen_height);
+    memcpy(p_frame->imageData, image2, p_frame->width * p_frame->height * p_frame->nChannels);
+
+    adaboost_face_test(p_frame, image2, target_width, target_height);
 
 
-
-    memcpy(p_frame->imageData, image, p_frame->width * p_frame->height * p_frame->nChannels);
+    //memcpy(p_frame->imageData, image, p_frame->width * p_frame->height * p_frame->nChannels);
 
     //std::vector<struct __possi_rect*>::iterator it;
     //for(it = g_possi_rects.begin(); it < g_possi_rects.end(); it ++) {
+#if 0
     int drawed = 0;
     for(int i = 1023; i >= 0 && drawed < 10; i --) {
 
@@ -167,7 +271,7 @@ int adaboost_test_main() {
         cvRectangle(p_frame, cvPoint(p->x, p->y), cvPoint(p->x + p->w, p->y + p->h), CV_RGB(0,255,0), 2);
         //cvRect(p_frame, p->x, p->y, p->w, p->h);
     }
-
+#endif
 
     while(1) {
         cvShowImage("show", p_frame);
@@ -219,6 +323,7 @@ int adaboost_test_main() {
         char k = cvWaitKey(33);
     }
 #endif
+
     int screen_width = 20;
     int screen_height = 20;
     u8 *image = 0;
@@ -262,4 +367,17 @@ int adaboost_test_main() {
 
 
 }
-#endif
+
+
+int adaboost_single_face_judge(u8 *image, int block)
+{
+    u32* integral = (u32*) malloc(sizeof(u32) * block * block);
+    g_haarlike.haarlike_integral(image, integral, block, block);
+    static __strong_clssf* pstr_clss = 0;
+
+    if(pstr_clss == 0)
+    {
+        load_strong_clss_from_file(STRONG_CLASSFIER_FILE, &pstr_clss);
+    }
+    return adaboost_jump_block_face(integral, block, block, 0, 0, block, pstr_clss);
+}

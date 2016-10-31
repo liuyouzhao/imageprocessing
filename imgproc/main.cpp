@@ -10,8 +10,15 @@ extern int adaboost_test_main();
 extern int haarlike_integral(u8 *p, u32 *out, u32 w, u32 h);
 
 extern HaarlikeProc g_haarlike;
+
+int surf_main();
+
+
 int main(int argc, char** argv)
 {
+    surf_main();
+    return 0;
+
 #if 0
     u32 inte[9] = {
         1, 2, 3,

@@ -1,4 +1,6 @@
 #include <stdio.h>
+#include <time.h>
+#include <sys/time.h>
 #include "proc.h"
 
 #include "cv.h"
@@ -174,6 +176,104 @@ int mat_to_u8arr(cv::Mat src, u8* dst, int w, int h)
     }
 }
 
+void load_grey_image_from_file(const char* file, u8** image, int *w, int *h)
+{
+    IplImage* pic = cvLoadImage(file);
+
+
+    //show_image_c((u8*)pic->imageData, pic->width, pic->height, pic->nChannels);
+
+    *w = pic->width;
+    *h = pic->height;
+    int c = pic->nChannels;
+    int n = 0;
+    int len = (*w) * (*h);
+
+    *image = (u8*)malloc(len);
+
+    int width = *w;
+    int height = *h;
+    for(int i = 0, j = 0; i < width*height*3; i += 3, j ++)
+    {
+        uchar r = pic->imageData[i];
+        uchar g = pic->imageData[i + 1];
+        uchar b = pic->imageData[i + 2];
+
+        (*image)[j] = (r + g + b) / 3;
+    }
+
+    for(int i = 0, j = 0; i < width*height*3; i += 3, j ++)
+    {
+        pic->imageData[i] = (*image)[j];
+        pic->imageData[i + 1] = (*image)[j];
+        pic->imageData[i + 2] = (*image)[j];
+    }
+
+
+    //show_image_c((u8*)pic->imageData, *w, *h, 3);
+#if 0
+    cv::Mat src;
+    src = cv::imread(file);
+    if(!src.data)
+    {
+        printf("Error! file is empty! \n");
+        return;
+    }
+
+    int nr = src.rows;
+    int nc = src.cols;
+    int c = src.channels();
+    *image = (u8*)malloc(nr * nc);
+
+    int n = 0;
+    for(int i = 0; i < nr; i ++) {
+        uchar* data = src.ptr<uchar>(i);
+        for(int j = 0; j < nc; j ++) {
+            int r = data[j * c];
+            int g = data[j * c + 1];
+            int b = data[j * c + 2];
+            int grey = 0.30 * r + 0.59 * g + 0.11 * b;
+            grey = grey > 255 ? 255 : grey;
+            (*image)[n] = grey;
+            n ++;
+        }
+    }
+    *w = nc;
+    *h = nr;
+#endif
+}
+
+void load_color_image_from_file(const char* file, u8** image, int *w, int *h)
+{
+    cv::Mat src;
+    src = cv::imread(file);
+    if(!src.data)
+    {
+        printf("Error! file is empty! \n");
+        return;
+    }
+
+    int nr = src.rows;
+    int nc = src.cols;
+    int c = src.channels();
+    *image = (u8*)malloc(nr * nc * c);
+
+    int n = 0;
+    for(int i = 0; i < nr; i ++) {
+        uchar* data = src.ptr<uchar>(i);
+        for(int j = 0; j < nc; j ++) {
+            uchar r = data[j * c];
+            uchar g = data[j * c + 1];
+            uchar b = data[j * c + 2];
+            (*image)[n] = r;
+            (*image)[n + 1] = g;
+            (*image)[n + 2] = b;
+            n = n + c;
+        }
+    }
+    *w = nc;
+    *h = nr;
+}
 
 void show_image(u8* buffer, int w, int h)
 {
@@ -189,4 +289,42 @@ void show_image(u8* buffer, int w, int h)
     }
     //delete p_frame;
     //free(p_frame);
+}
+
+void show_image_c(u8* buffer, int w, int h, int c)
+{
+    IplImage* p_frame = NULL;
+    p_frame = cvCreateImage(cvSize(w, h), IPL_DEPTH_8U, c);
+
+    memcpy(p_frame->imageData, buffer, p_frame->width * p_frame->height * p_frame->nChannels);
+
+    while(1) {
+        cvShowImage("show", p_frame);
+        char k = cvWaitKey(33);
+        if(k == 27) break;
+    }
+    //delete p_frame;
+    //free(p_frame);
+}
+
+
+
+static struct timeval __start_time;
+static struct timeval __end_time;
+
+void __perf_begin_time()
+{
+    gettimeofday(&__start_time, NULL);
+}
+
+
+void __perf_end_time()
+{
+    gettimeofday(&__end_time, NULL);
+    long seconds  = __end_time.tv_sec  - __start_time.tv_sec;
+    long useconds = __end_time.tv_usec - __start_time.tv_usec;
+
+    long mtime = ((seconds) * 1000 + useconds/1000.0) + 0.5;
+
+    printf("Elapsed time: %ld milliseconds\n", mtime);
 }

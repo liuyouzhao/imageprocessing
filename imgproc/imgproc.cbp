@@ -23,10 +23,6 @@
 					<Add library="../../../../../../usr/local/lib/libopencv_videoio.so" />
 					<Add library="../../../../../../usr/local/lib/libopencv_videostab.so" />
 					<Add library="../../../../../../usr/local/lib/libopencv_imgcodecs.so" />
-					<Add library="../../../../../../usr/local/lib/libopencv_videostab.so" />
-					<Add library="../../../../../../usr/local/lib/libopencv_videoio.so" />
-					<Add library="../../../../../../usr/local/lib/libopencv_video.so" />
-					<Add library="../../../../../../usr/local/lib/libopencv_imgcodecs.so" />
 					<Add library="../../../../../../usr/local/lib/libopencv_imgproc.so" />
 					<Add directory="../../../../../../usr/local/lib" />
 				</Linker>
@@ -51,6 +47,7 @@
 		<Unit filename="___backup_code___.cpp" />
 		<Unit filename="adaboost.cpp" />
 		<Unit filename="adaboost_main.cpp" />
+		<Unit filename="adaboost_test.cpp" />
 		<Unit filename="adaboost_train.cpp" />
 		<Unit filename="binary.cpp" />
 		<Unit filename="convolute.cpp" />
@@ -59,11 +56,14 @@
 		<Unit filename="gradient.cpp" />
 		<Unit filename="grey.cpp" />
 		<Unit filename="haarlike.cpp" />
+		<Unit filename="hessian.cpp" />
 		<Unit filename="longedge.cpp" />
 		<Unit filename="main.cpp" />
 		<Unit filename="proc.h" />
 		<Unit filename="proc_utils.cpp" />
 		<Unit filename="process_main.cpp" />
+		<Unit filename="surf.cpp" />
+		<Unit filename="surf_main.cpp" />
 		<Extensions>
 			<code_completion />
 			<debugger />

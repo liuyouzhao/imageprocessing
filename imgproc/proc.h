@@ -31,8 +31,11 @@
 
 #define WEIGHT_LOSS_PATH "/home/hujia/workspace/imgproc/imageprocessing/imgproc/train/weights"
 
-#define TEST_FILE "/home/hujia/workspace/imgproc/imageprocessing/imgproc/res/tests/test4.jpg"
-//#define TEST_FILE "/home/hujia/workspace/imgproc/imageprocessing/imgproc/res/tests/test.jpg"
+#define TEST_FILE "/home/hujia/workspace/imgproc/imageprocessing/imgproc/res/tests/test.jpg"
+//#define TEST_FILE "/home/hujia/workspace/imgproc/imageprocessing/imgproc/res/tests/test4.jpg"
+#define TEST_FILE_SURF "/home/hujia/workspace/imgproc/imageprocessing/imgproc/res/tests/test_ben.jpg"
+
+
 
 #define SAMPLE_BLOCK_WIDTH 20
 
@@ -126,6 +129,70 @@ struct __possi_rect {
     int rt;
 };
 
+
+#define PARIMITS_LAYERS_NUMBER 5
+#define FEATURE_THREHOLD 0
+#define HFV_NUM 64
+
+#define HESSIAN_RADIO 6
+#define HESSIAN_HAAR_SIZE 4
+#define HESSIAN_ANGLE 60.0
+#define HESSIAN_ANGLE_JUMP 30
+#define HESSIAN_DESCRIPT_BLOCK 20
+#define HESSIAN_DESCRIPT_NUM_BLOCK 4
+#define HESSIAN_DESCRIPT_HAAR_SIZE 2
+
+#define PI 3.1415926535897932
+
+struct __hessian_value
+{
+    double* values;
+    int level;
+};
+
+struct __hessian_fv
+{
+    int x;
+    int y;
+    int hfv;
+    int level;
+    int dir;
+    int fvs[HFV_NUM];
+    double s;
+};
+
+class SurfObject
+{
+
+public:
+    SurfObject();
+    ~SurfObject();
+
+    void updateImage(u8* image, int w, int h);
+    void updateCurrentIntegral();
+    void updateAllParimitsFeatures();
+    void updateCalculateExtremums();
+    void updateCalculateDirections();
+    void updateFeatureDescription();
+
+    u8* getOriginalImage() {    return m_orignal_image; }
+    int getWidth()  {   return m_width; }
+    int getHeight() {   return m_height; }
+    std::vector<struct __hessian_fv*> getFeatureValues() {    return m_feature_values; }
+
+
+private:
+    std::vector<struct __hessian_value*> m_parimit;
+    std::vector<struct __hessian_fv*> m_feature_values;
+
+    u8* m_orignal_image;
+
+    u32* m_integral;
+
+    int m_width;
+    int m_height;
+};
+
 void sort(int *a, int left, int right);
 void sort_fv_by_val(struct __feature_value **fv, int left, int right);
 void sort_fv_by_val(struct __possi_rect **rects, int left, int right);
@@ -134,4 +201,10 @@ int read_file(const char* file, char* data, int len);
 int write_file(const char* file, char* data, int len);
 int write_file_by_id(const char* header, int x, int y, int bw, int bh, int tt, int tn, char* data, int len);
 
+void show_image(u8* buffer, int w, int h);
+void show_image_c(u8* buffer, int w, int h, int c);
+void __perf_begin_time();
+void __perf_end_time();
+
+void load_color_image_from_file(const char* file, u8** image, int *w, int *h);
 #endif // PROC_H_INCLUDED

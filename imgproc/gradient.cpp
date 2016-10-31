@@ -23,7 +23,6 @@ static unsigned char* __gradient_process(u8* p, u8* out, u32 w, u32 h) {
 	};
 
 
-
 	/* 3 X 3 */
 	u8 preW = 3;
 	int width = w;

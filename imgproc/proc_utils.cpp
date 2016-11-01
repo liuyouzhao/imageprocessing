@@ -198,8 +198,9 @@ void load_grey_image_from_file(const char* file, u8** image, int *w, int *h)
         uchar r = pic->imageData[i];
         uchar g = pic->imageData[i + 1];
         uchar b = pic->imageData[i + 2];
-
-        (*image)[j] = (r + g + b) / 3;
+        int grey = 0.30 * r + 0.59 * g + 0.11 * b;
+        grey = grey > 255 ? 255 : grey;
+        (*image)[j] = grey;
     }
 
     for(int i = 0, j = 0; i < width*height*3; i += 3, j ++)

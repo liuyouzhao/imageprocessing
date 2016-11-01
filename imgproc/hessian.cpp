@@ -11,12 +11,20 @@ extern HaarlikeProc g_haarlike;
 
 int hessian_calculate_dir_haar_addons(int x, int y, int radio,
                                 int angle_from, int angle_to,
-                                u32* integral, int w, int h, int s);
-
+                                u32* integral, int w, int h, int s, int l);
+#if USE_GROUP
+int s_level[3][5] = {
+    //9, 15, 21, 27, 33, 39, 45, 51, 57
+    {9, 15, 21, 27, 33},
+    {15, 27, 39, 51, 63},
+    {27, 51, 75, 99, 123}
+};
+#else
 int s_level[5] = {
     //9, 15, 21, 27, 33, 39, 45, 51, 57
     9, 15, 21, 27, 33
 };
+#endif
 
 /*
 *
@@ -186,20 +194,161 @@ static int haarlike_point(u32 *integ, int w, int h, int x, int y, int level) {
     return fv;
 }
 
+/*
+*
+Edge Vertical
+    --------------------------
+
+          1      2
+          |------|
+          |      |
+          |      |
+         3|------|4
+          |      |
+          |      |
+         5|------|6
+
+    -------------------------
+
+*/
+static int haarlike_edge_vert(u32 *integ, int w, int h, int x, int y, int level) {
+
+    int p135x, p246x;
+    int p12y, p34y, p56y;
+    int fv = 0;
+
+    int ii1, ii2, ii3, ii4, ii5, ii6;
+
+#if 1
+    if(level % 2 == 0)
+    {
+        p12y = y - (level >> 1);
+        p34y = y;
+        p56y = y + (level >> 1);
+
+        p135x = x - (level >> 1) - 1;
+        p246x = x + (level >> 1) - 1;
+    }
+    else
+    {
+        p12y = y - (level >> 1) - 1;
+        p34y = y;
+        p56y = y + (level >> 1);
+
+        p135x = x - (level >> 1) - 1;
+        p246x = x + (level >> 1);
+    }
+
+#endif // 0
+#if 0
+    p12y = y - 1;
+    p34y = y + (level >> 1) - 1;
+    p56y = y + (level) - 1;
+
+    p135x = x - 1;
+    p246x = x + (level >> 1) - 1;
+#endif
+
+    ii1 = (p12y < 0 || p135x < 0) ? 0 : integ[p12y * w + p135x];
+    ii2 = p12y < 0 ? 0 : integ[p12y * w + p246x];
+    ii3 = p135x < 0 ? 0 : integ[p34y * w + p135x];
+    ii4 = integ[p34y * w + p246x];
+    ii6 = integ[p56y * w + p246x];
+    ii5 = p135x < 0 ? 0 : integ[p56y * w + p135x];
+
+
+    fv = (ii3 + ii6 - ii4 - ii5) +(-1) *  (ii1 + ii4 - ii2 - ii3);
+    return fv;
+}
+
+/*
+*
+Edge Horizon
+    --------------------------
+
+          1      2      3
+          |------|------|
+          |      |      |
+          |      |      |
+          |------|------|
+          4      5      6
+    -------------------------
+
+*/
+static int haarlike_edge_horizon(u32 *integ, int w, int h, int x, int y, int level) {
+
+    int p14x, p25x, p36x;
+    int p123y, p456y;
+
+    int fv = 0;
+
+    int ii1, ii2, ii3, ii4, ii5, ii6;
+
+
+#if 1
+    if(level % 2 == 0)
+    {
+        p123y = y - (level >> 1) - 1;
+        p456y = y + (level >> 1) - 1;
+
+        p14x = x - (level >> 1);
+        p25x = x;
+        p36x = x + (level >> 1);
+    }
+    else
+    {
+        p123y = y - (level >> 1) - 1;
+        p456y = y + (level >> 1);
+
+        p14x = x - (level >> 1) - 1;
+        p25x = x;
+        p36x = x + (level >> 1);
+    }
+
+#endif
+#if 0
+    p123y = y - 1;
+    p456y = y + (level >> 1) - 1;
+
+    p14x = x - 1;
+    p25x = x + (level >> 1) - 1;
+    p36x = x + (level) - 1;
+#endif
+
+    ii1 = (p123y < 0 || p14x < 0) ? 0 : integ[p123y * w + p14x];
+    ii2 = p123y < 0 ? 0 : integ[p123y * w + p25x];
+    ii3 = p123y < 0 ? 0 : integ[p123y * w + p36x];
+    ii4 = p14x < 0 ? 0 : integ[p456y * w + p14x];
+    ii5 = integ[p456y * w + p25x];
+    ii6 = integ[p456y * w + p36x];
+
+    fv = (-1) * (ii1 + ii5 - ii2 - ii4) + (ii2 + ii6 - ii3 - ii5);
+
+    return fv;
+}
+
+
 /**
 det = Lxx*Lyy - (0.9*Lxy)^2
 
 */
+#if USE_GROUP
+int hessian_value(u32* integral, double* values, int w, int h, int l, int g)
+#else
 int hessian_value(u32* integral, double* values, int w, int h, int l)
+#endif
 {
     double Lxx = 0;
     double Lyy = 0;
     double Lxy = 0;
-
+#if USE_GROUP
+    int level = s_level[g][l];
+#else
     int level = s_level[l];
+#endif
     double l2 = (double)level * level;
 
-    memset(values, -9999, sizeof(int) * w * h);
+    memset(values, 0.0f, sizeof(double) * w * h);
 
     //l2 = 1;
     for(int i = level / 2 + 1; i < h - level / 2 - 1; i ++)
@@ -221,27 +370,37 @@ int hessian_value(u32* integral, double* values, int w, int h, int l)
 
     return 0;
 }
-
-int is_hessian_max(double* vu, double* vm, double* vd, int x, int y, int w, int h)
+#if USE_GROUP
+int is_hessian_max(double* vu, double* vm, double* vd, int x, int y, int w, int h, int l, int g)
+#else
+int is_hessian_max(double* vu, double* vm, double* vd, int x, int y, int w, int h, int l)
+#endif
 {
 
     int ct = y * w + x;
     double ifMax = vm[ct];
-    int level = s_level[PARIMITS_LAYERS_NUMBER - 1];
+#if USE_GROUP
+    int edge = s_level[g][PARIMITS_LAYERS_NUMBER - 1];
+    int level = s_level[g][l];
+#else
+    int edge = s_level[PARIMITS_LAYERS_NUMBER - 1];
+    int level = s_level[l];
+#endif
+    int levelMap = level;
 
-    if(x <= level / 2 - 1 || x >= w - level / 2 - 1)
+    if(x <= edge / 2 - 1 || x >= w - edge / 2 - 1)
     {
         return 0;
     }
 
-    if(y <= level / 2 - 1 || y >= h - level / 2 - 1)
+    if(y <= edge / 2 - 1 || y >= h - edge / 2 - 1)
     {
         return 0;
     }
 
-    for(int i = -(level>>1); i <= (level>>1); i ++)
+    for(int i = -(levelMap>>1); i <= (levelMap>>1); i ++)
     {
-        for(int j = -(level>>1); j <= (level>>1); j ++)
+        for(int j = -(levelMap>>1); j <= (levelMap>>1); j ++)
         {
             int xc = x + j;
             int yc = y + i;
@@ -257,16 +416,213 @@ int is_hessian_max(double* vu, double* vm, double* vd, int x, int y, int w, int 
     return 1;
 }
 
-
-int hessian_get_direction(int x, int y, double s, u32* integral, int w, int h)
+static double get_angle(int x, int y)
 {
+    /// 90
+    if(x == 0 && y < 0)
+    {
+        return PI * 0.5f;
+    }
+
+    /// 180
+    if(x < 0 && y == 0)
+    {
+        return PI;
+    }
+
+    /// 270
+    if(x == 0 && y > 0)
+    {
+        return PI * 1.5f;
+    }
+
+    /// 360 || 0
+    if(x > 0 && y == 0)
+    {
+        return 0;
+    }
+
+    double angle = atan((double)-y/(double)x);
+
+    /// 0-90
+    if(x > 0 && y < 0)
+    {
+        return angle;
+    }
+    /// 90-180
+    if(x < 0 && y < 0)
+    {
+        return angle + PI;
+    }
+    /// 180-270
+    if(x < 0 && y > 0)
+    {
+        return angle + PI;
+    }
+    /// 270-360
+    if(x > 0 && y > 0)
+    {
+        return angle + PI * 2;
+    }
+
+
+}
+
+int hessian_get_direction(int x, int y, double s, int l, u32* integral, int w, int h)
+{
+    static double _opera[25] =
+    {
+        1, 4, 7, 4, 1,
+        4, 16, 26, 16, 4,
+        7, 26, 41, 26, 7,
+        4, 16, 26, 16, 4,
+        1, 4, 7, 4, 1
+    };
+
+    int r = (int)(6.0f * s);
+    int d = 2.0f * r;
+    int fvX[d*d];
+    int fvY[d*d];
+    int step = (int)(4.0*s);
+    step = (step % 2) != 0 ? step + 1 : step;
+    double angles[d*d];
+    double gaussw = 0.0f;
+
+    int n = 0;
+#if 1
+    //printf("**************************************\n");
+    for(int i = -r; i <= r; i ++)
+    {
+        for(int j = -r; j <= r; j ++)
+        {
+            if(i*i + j*j <= r * r)
+            {
+                int _x = x + j;
+                int _y = y + i;
+
+                int gx = 2 + ((double)j * (5.0f / (double)r));
+                int gy = 2 + ((double)i * (5.0f / (double)r));
+                gaussw = (double)_opera[gy * 5 + gx];
+
+                fvX[n] =  haarlike_edge_horizon(integral, w, h, _x, _y, step);
+                fvY[n] =  haarlike_edge_vert(integral, w, h, _x, _y, step);
+
+                //printf("%d ", fvX[n]);
+                //printf("%d %d=========\n", _x, _y);
+                angles[n] = get_angle(fvX[n], fvY[n]);
+
+                n ++;
+            }
+        }
+    }
+#endif
+#if 0
+    for(int i = -6; i <= 6; i ++)
+    {
+        for(int j = -6; j <= 6; j ++ )
+        {
+            if(i*i + j*j < 36)
+            {
+                int gx = 2 + ((double)j * (5.0f / (double)6));
+                int gy = 2 + ((double)i * (5.0f / (double)6));
+                gaussw = (double)_opera[gy * 5 + gx];
+
+                int _x = (double)x + (double)j*(double)s;
+                int _y = (double)y + (double)i*(double)s;
+
+
+                fvX[n] = gaussw * haarlike_edge_horizon(integral, w, h, _x, _y, (double)4.0f*(double)s);
+                fvY[n] = gaussw * haarlike_edge_vert(integral, w, h, _x, _y, (double)4.0f*(double)s);
+
+                printf("%f ", fvX[n]);
+                printf("%d %d=========\n", _x, _y);
+
+                angles[n] = get_angle(fvX[n], fvY[n]);
+                //printf("angles: %f\n", angles[n]);
+                n ++;
+            }
+        }
+    }
+#endif
+
+#if 1
+    double ang1 = 0.0f;
+    double ang2 = 0.0f;
+    double sum_X = 0.0f;
+    double sum_Y = 0.0f;
+    double orientation = 0.0f;
+    double max = -9999.9f;
+    for(ang1 = 0; ang1 < 2 * PI; ang1 += 0.15f)
+    {
+        ang2 = (ang1 + PI / 3.0f > 2 * PI ? ang1 - 5.0f * PI / 3.0f : ang1 + PI / 3.0f);
+        sum_X = sum_Y = 0.0f;
+
+        for(int k = 0; k < n; k ++)
+        {
+            double ang = angles[k];
+
+            if(ang1 < ang2 && ang1 < ang && ang < ang2)
+            {
+                double an = ang * 180.0f / PI;
+
+                sum_X += fvX[k];
+                sum_Y += fvY[k];
+            }
+            else if(ang2 < ang1 && ((ang > 0 && ang < ang2) || (ang > ang1 && ang < 2 * PI)))
+            {
+                sum_X += fvX[k];
+                sum_Y += fvY[k];
+            }
+        }
+
+        if(sum_X * sum_X + sum_Y * sum_Y > max && !(sum_X == 0.0f && sum_Y == 0.0f))
+        {
+            max = sum_X * sum_X + sum_Y * sum_Y;
+            orientation = get_angle(sum_X, sum_Y);
+        }
+
+    }
+    //printf("%f %f\n", sum_X, sum_Y);
+    return (int)(orientation / PI * 180.0f);
+#endif
+#if 0
+    const int GROUPS = 24;
+    int sumX[GROUPS] = {0};
+    int sumY[GROUPS] = {0};
+    int _REGION_ANGLE = 360 / GROUPS;
+    int _HALF_ANGLE = _REGION_ANGLE / 2;
+    for(int i = 0; i < n; i ++)
+    {
+        double an = angles[i];
+        int a360 = (int)(an / PI * 180.0f);
+        int group = a360 / _REGION_ANGLE;
+
+        sumX[group] += fvX[i];
+        sumY[group] += fvY[i];
+    }
+
+    int max = -999999;
+    int oriented = 0;
+    for(int i = 0; i < GROUPS; i ++)
+    {
+        int v = sumX[i] * sumX[i] + sumY[i] * sumY[i];
+        if(v > max)
+        {
+            max = v;
+            oriented = get_angle(sumX[i], sumY[i]);
+        }
+    }
+
+    return oriented;
+#endif
+#if 0
     int max_value = -9999999;
     double dir = 0.0f;
     int an = 0.0f;
     for( ; an < 360.0f; an += HESSIAN_ANGLE_JUMP )
     {
         int val = hessian_calculate_dir_haar_addons(x, y, HESSIAN_RADIO * s,
-                            an, an + HESSIAN_ANGLE, integral, w, h, HESSIAN_HAAR_SIZE * s);
+                            an, an + HESSIAN_ANGLE, integral, w, h, HESSIAN_HAAR_SIZE * s, l);
         if(max_value < val)
         {
             max_value = val;
@@ -274,124 +630,9 @@ int hessian_get_direction(int x, int y, double s, u32* integral, int w, int h)
         }
     }
     return (int)dir;
-}
-
-/**
-angle: 0---360
-*/
-int hessian_calculate_dir_haar_addons(int x, int y, int radio,
-                                int angle_from, int angle_to,
-                                u32* integral, int w, int h, int s)
-{
-
-    std::vector<long> points_in_angle;
-
-    ///(1) get mask
-    int* mask = (int*) malloc(radio * radio * sizeof(int));
-
-    memset(mask, 0, sizeof(int) * radio * radio);
-
-    double tan_angle_from = 0.0f;
-    double tan_angle_to = 0.0f;
-
-    tan_angle_from = tan(angle_from);
-    tan_angle_to = tan(angle_to);
-
-
-    int ix = 0;
-    int iy = 0;
-    int dbg[radio * radio * 4];
-    int i = 0;
-    double angle_cur = 0.0f;
-
-    long values = ((x << 32) & 0xffffffff00000000) + y;
-    points_in_angle.push_back(values);
-
-    for( iy = y - radio ; iy < y + radio; iy ++ )
-    {
-        for( ix = x - radio ; ix < x + radio; ix ++)
-        {
-            double tan_cur = ((double)y - (double)iy) / ((double)ix - (double)x);
-            angle_cur = 0;
-            dbg[i] = 0;
-
-            if((ix - x) * (ix - x) + (iy - y) * (iy - y) <= radio * radio)
-            {
-                if(ix >= x && iy <= y)
-                {
-                    if(angle_to <= 360)
-                        angle_cur = atan(tan_cur) * 180.0f / PI;
-                    else
-                        angle_cur = atan(tan_cur) * 180.0f / PI + 360.0f;
-                }
-                else if(ix <= x && iy <= y)
-                {
-                    angle_cur = atan(tan_cur) * 180.0f / PI + 180.0f;
-                }
-                else if(ix >= x && iy >= y)
-                {
-                    angle_cur = atan(tan_cur) * 180.0f / PI + 360.0f;
-                }
-                else if(ix <= x && iy >= y)
-                {
-                    angle_cur = atan(tan_cur) * 180.0f / PI + 180.0f;
-                }
-                /*else
-                {
-                    angle_cur = atan(tan_cur);
-                    if(angle_cur >= 0)
-                    {
-                        angle_cur = atan(tan_cur) * 180.0f / PI + 180.0f;
-                    }
-                    else
-                    {
-                        angle_cur = 360.0f - ( atan(tan_cur) * 180.0f / PI + 180.0f );
-                    }
-                }*/
-                if(angle_cur >= angle_from && angle_cur <= angle_to)
-                {
-                    dbg[i] = 1;
-                    long values = ((ix << 32) & 0xffffffff00000000) + iy;
-                    points_in_angle.push_back(values);
-                    //mask[iy * radio + ix] = 1;
-                }
-            }
-            i ++;
-        }
-    }
-#if 0
-    //dbg[y * radio * 2 + x] = 1;
-    for(int i = 0; i < radio * 2; i ++)
-    {
-        for(int j = 0; j < radio * 2; j ++)
-        {
-            printf("%d ", dbg[i * radio * 2 + j]);
-        }
-        printf("\n");
-    }
 #endif;
-
-    int addon = 0;
-    std::vector<long>::iterator it = points_in_angle.begin();
-    for(; it != points_in_angle.end(); it ++)
-    {
-        long v = *it;
-        ix = v & 0xffffffff00000000 >> 32;
-        iy = v & 0x00000000ffffffff;
-        int* fv = 0;
-        int* fv2 = 0;
-
-        //haarlike_edge_horizon(u32 *integ, u32 w, u32 h, u32 sw, u32 sh, u8 x, u8 y, u8 bw, u8 bh, int **ftout)
-        g_haarlike.haarlike_edge_horizon(integral, w, h, w, h, ix, iy, s, s, &fv);
-        g_haarlike.haarlike_edge_vert(integral, w, h, w, h, ix, iy, s, s, &fv2);
-
-        addon += (fv)[0];
-        addon += fv2[0];
-        free(fv);
-        free(fv2);
-    }
-    return addon;
 }
+
 
 int hessian_descript(u8* image, int w, int h, int x, int y, int dir, int* out, double s)
 {

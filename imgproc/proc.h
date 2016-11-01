@@ -33,7 +33,6 @@
 
 #define TEST_FILE "/home/hujia/workspace/imgproc/imageprocessing/imgproc/res/tests/test.jpg"
 //#define TEST_FILE "/home/hujia/workspace/imgproc/imageprocessing/imgproc/res/tests/test4.jpg"
-#define TEST_FILE_SURF "/home/hujia/workspace/imgproc/imageprocessing/imgproc/res/tests/test_ben.jpg"
 
 
 
@@ -131,7 +130,7 @@ struct __possi_rect {
 
 
 #define PARIMITS_LAYERS_NUMBER 5
-#define FEATURE_THREHOLD 0
+#define FEATURE_THREHOLD 1
 #define HFV_NUM 64
 
 #define HESSIAN_RADIO 6
@@ -148,6 +147,7 @@ struct __hessian_value
 {
     double* values;
     int level;
+    int group;
 };
 
 struct __hessian_fv
@@ -156,10 +156,12 @@ struct __hessian_fv
     int y;
     int hfv;
     int level;
+    int group;
     int dir;
     int fvs[HFV_NUM];
     double s;
 };
+
 
 class SurfObject
 {

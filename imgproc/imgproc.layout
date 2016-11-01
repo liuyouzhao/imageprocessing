@@ -1,84 +1,9 @@
 <?xml version="1.0" encoding="UTF-8" standalone="yes" ?>
 <CodeBlocks_layout_file>
 	<ActiveTarget name="Debug" />
-	<File name="hessian.cpp" open="1" top="1" tabpos="4" split="0" active="1" splitpos="0" zoom_1="0" zoom_2="0">
+	<File name="grey.cpp" open="1" top="0" tabpos="11" split="0" active="1" splitpos="0" zoom_1="0" zoom_2="0">
 		<Cursor>
-			<Cursor1 position="8896" topLine="295" />
-		</Cursor>
-	</File>
-	<File name="grey.cpp" open="0" top="0" tabpos="12" split="0" active="1" splitpos="0" zoom_1="0" zoom_2="0">
-		<Cursor>
-			<Cursor1 position="408" topLine="15" />
-		</Cursor>
-	</File>
-	<File name="process_main.cpp" open="1" top="0" tabpos="7" split="0" active="1" splitpos="0" zoom_1="0" zoom_2="0">
-		<Cursor>
-			<Cursor1 position="626" topLine="11" />
-		</Cursor>
-	</File>
-	<File name="convolute.cpp" open="1" top="0" tabpos="8" split="0" active="1" splitpos="0" zoom_1="0" zoom_2="0">
-		<Cursor>
-			<Cursor1 position="1474" topLine="36" />
-		</Cursor>
-	</File>
-	<File name="proc.h" open="1" top="0" tabpos="9" split="0" active="1" splitpos="0" zoom_1="-2" zoom_2="0">
-		<Cursor>
-			<Cursor1 position="3697" topLine="158" />
-		</Cursor>
-	</File>
-	<File name="proc_utils.cpp" open="1" top="0" tabpos="10" split="0" active="1" splitpos="0" zoom_1="-2" zoom_2="0">
-		<Cursor>
-			<Cursor1 position="4383" topLine="208" />
-		</Cursor>
-	</File>
-	<File name="adaboost.cpp" open="1" top="0" tabpos="11" split="0" active="1" splitpos="0" zoom_1="-1" zoom_2="0">
-		<Cursor>
-			<Cursor1 position="482" topLine="99" />
-		</Cursor>
-	</File>
-	<File name="feature_main.cpp" open="0" top="0" tabpos="6" split="0" active="1" splitpos="0" zoom_1="0" zoom_2="0">
-		<Cursor>
-			<Cursor1 position="1654" topLine="0" />
-		</Cursor>
-	</File>
-	<File name="main.cpp" open="0" top="0" tabpos="6" split="0" active="1" splitpos="0" zoom_1="0" zoom_2="0">
-		<Cursor>
-			<Cursor1 position="394" topLine="6" />
-		</Cursor>
-	</File>
-	<File name="___backup_code___.cpp" open="0" top="0" tabpos="9" split="0" active="1" splitpos="0" zoom_1="0" zoom_2="0">
-		<Cursor>
-			<Cursor1 position="318" topLine="0" />
-		</Cursor>
-	</File>
-	<File name="gradient.cpp" open="0" top="0" tabpos="8" split="0" active="1" splitpos="0" zoom_1="0" zoom_2="0">
-		<Cursor>
-			<Cursor1 position="338" topLine="13" />
-		</Cursor>
-	</File>
-	<File name="adaboost_train.cpp" open="0" top="0" tabpos="3" split="0" active="1" splitpos="0" zoom_1="-1" zoom_2="0">
-		<Cursor>
-			<Cursor1 position="6305" topLine="114" />
-		</Cursor>
-	</File>
-	<File name="surf_main.cpp" open="1" top="0" tabpos="2" split="0" active="1" splitpos="0" zoom_1="0" zoom_2="0">
-		<Cursor>
-			<Cursor1 position="1951" topLine="59" />
-		</Cursor>
-	</File>
-	<File name="haarlike.cpp" open="1" top="0" tabpos="5" split="0" active="1" splitpos="0" zoom_1="0" zoom_2="0">
-		<Cursor>
-			<Cursor1 position="5175" topLine="175" />
-		</Cursor>
-	</File>
-	<File name="gauss.cpp" open="1" top="0" tabpos="6" split="0" active="1" splitpos="0" zoom_1="0" zoom_2="0">
-		<Cursor>
-			<Cursor1 position="310" topLine="0" />
-		</Cursor>
-	</File>
-	<File name="binary.cpp" open="0" top="0" tabpos="5" split="0" active="1" splitpos="0" zoom_1="0" zoom_2="0">
-		<Cursor>
-			<Cursor1 position="446" topLine="0" />
+			<Cursor1 position="691" topLine="11" />
 		</Cursor>
 	</File>
 	<File name="adaboost_main.cpp" open="0" top="0" tabpos="4" split="0" active="1" splitpos="0" zoom_1="0" zoom_2="0">
@@ -86,19 +11,99 @@
 			<Cursor1 position="909" topLine="37" />
 		</Cursor>
 	</File>
-	<File name="adaboost_test.cpp" open="1" top="0" tabpos="3" split="0" active="1" splitpos="0" zoom_1="0" zoom_2="0">
+	<File name="mathmatrix.cpp" open="1" top="0" tabpos="2" split="0" active="1" splitpos="0" zoom_1="0" zoom_2="0">
 		<Cursor>
-			<Cursor1 position="119" topLine="0" />
-		</Cursor>
-	</File>
-	<File name="surf.cpp" open="1" top="0" tabpos="1" split="0" active="1" splitpos="0" zoom_1="0" zoom_2="0">
-		<Cursor>
-			<Cursor1 position="4151" topLine="132" />
+			<Cursor1 position="463" topLine="0" />
 		</Cursor>
 	</File>
 	<File name="longedge.cpp" open="0" top="0" tabpos="11" split="0" active="1" splitpos="0" zoom_1="0" zoom_2="0">
 		<Cursor>
 			<Cursor1 position="365" topLine="4" />
+		</Cursor>
+	</File>
+	<File name="gauss.cpp" open="1" top="0" tabpos="14" split="0" active="1" splitpos="0" zoom_1="0" zoom_2="0">
+		<Cursor>
+			<Cursor1 position="534" topLine="9" />
+		</Cursor>
+	</File>
+	<File name="adaboost_train.cpp" open="0" top="0" tabpos="3" split="0" active="1" splitpos="0" zoom_1="-1" zoom_2="0">
+		<Cursor>
+			<Cursor1 position="6305" topLine="114" />
+		</Cursor>
+	</File>
+	<File name="surf_main.cpp" open="1" top="0" tabpos="1" split="0" active="1" splitpos="0" zoom_1="0" zoom_2="0">
+		<Cursor>
+			<Cursor1 position="3532" topLine="93" />
+		</Cursor>
+	</File>
+	<File name="process_main.cpp" open="1" top="0" tabpos="6" split="0" active="1" splitpos="0" zoom_1="0" zoom_2="0">
+		<Cursor>
+			<Cursor1 position="2211" topLine="38" />
+		</Cursor>
+	</File>
+	<File name="binary.cpp" open="0" top="0" tabpos="5" split="0" active="1" splitpos="0" zoom_1="0" zoom_2="0">
+		<Cursor>
+			<Cursor1 position="446" topLine="0" />
+		</Cursor>
+	</File>
+	<File name="adaboost.cpp" open="1" top="0" tabpos="9" split="0" active="1" splitpos="0" zoom_1="-1" zoom_2="0">
+		<Cursor>
+			<Cursor1 position="482" topLine="99" />
+		</Cursor>
+	</File>
+	<File name="hessian.cpp" open="1" top="0" tabpos="12" split="0" active="1" splitpos="0" zoom_1="0" zoom_2="0">
+		<Cursor>
+			<Cursor1 position="8956" topLine="405" />
+		</Cursor>
+	</File>
+	<File name="proc_utils.cpp" open="1" top="0" tabpos="10" split="0" active="1" splitpos="0" zoom_1="-2" zoom_2="0">
+		<Cursor>
+			<Cursor1 position="4167" topLine="195" />
+		</Cursor>
+	</File>
+	<File name="___backup_code___.cpp" open="0" top="0" tabpos="9" split="0" active="1" splitpos="0" zoom_1="0" zoom_2="0">
+		<Cursor>
+			<Cursor1 position="318" topLine="0" />
+		</Cursor>
+	</File>
+	<File name="adaboost_test.cpp" open="1" top="0" tabpos="5" split="0" active="1" splitpos="0" zoom_1="-1" zoom_2="0">
+		<Cursor>
+			<Cursor1 position="3423" topLine="78" />
+		</Cursor>
+	</File>
+	<File name="convolute.cpp" open="0" top="0" tabpos="8" split="0" active="1" splitpos="0" zoom_1="0" zoom_2="0">
+		<Cursor>
+			<Cursor1 position="1474" topLine="36" />
+		</Cursor>
+	</File>
+	<File name="gradient.cpp" open="0" top="0" tabpos="8" split="0" active="1" splitpos="0" zoom_1="0" zoom_2="0">
+		<Cursor>
+			<Cursor1 position="338" topLine="13" />
+		</Cursor>
+	</File>
+	<File name="haarlike.cpp" open="1" top="0" tabpos="13" split="0" active="1" splitpos="0" zoom_1="0" zoom_2="0">
+		<Cursor>
+			<Cursor1 position="3779" topLine="137" />
+		</Cursor>
+	</File>
+	<File name="main.cpp" open="0" top="0" tabpos="6" split="0" active="1" splitpos="0" zoom_1="0" zoom_2="0">
+		<Cursor>
+			<Cursor1 position="394" topLine="30" />
+		</Cursor>
+	</File>
+	<File name="proc.h" open="1" top="0" tabpos="3" split="0" active="1" splitpos="0" zoom_1="-2" zoom_2="0">
+		<Cursor>
+			<Cursor1 position="1744" topLine="12" />
+		</Cursor>
+	</File>
+	<File name="surf.cpp" open="1" top="1" tabpos="8" split="0" active="1" splitpos="0" zoom_1="0" zoom_2="0">
+		<Cursor>
+			<Cursor1 position="3683" topLine="128" />
+		</Cursor>
+	</File>
+	<File name="feature_main.cpp" open="0" top="0" tabpos="6" split="0" active="1" splitpos="0" zoom_1="0" zoom_2="0">
+		<Cursor>
+			<Cursor1 position="1654" topLine="0" />
 		</Cursor>
 	</File>
 </CodeBlocks_layout_file>

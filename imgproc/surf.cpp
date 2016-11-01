@@ -6,10 +6,14 @@
 #include "proc.h"
 #include "proc_utils.h"
 
-
+#if USE_GROUP
+int hessian_value(u32* integral, double* values, int w, int h, int level, int group);
+int is_hessian_max(double* vu, double* vm, double* vd, int x, int y, int w, int h, int l, int g);
+#else
 int hessian_value(u32* integral, double* values, int w, int h, int level);
-int is_hessian_max(double* vu, double* vm, double* vd, int x, int y, int w, int h);
-int hessian_get_direction(int x, int y, double s, u32* integral, int w, int h);
+int is_hessian_max(double* vu, double* vm, double* vd, int x, int y, int w, int h, int l);
+#endif
+int hessian_get_direction(int x, int y, double s, int l, u32* integral, int w, int h);
 int hessian_descript(u8* image, int w, int h, int x, int y, int dir, int* out, double s);
 
 extern HaarlikeProc g_haarlike;
@@ -58,13 +62,25 @@ void SurfObject::updateAllParimitsFeatures()
 
     if(m_parimit.size() == 0)
     {
+#if USE_GROUP
+        for(int i = 0; i < PARIMITS_LAYERS_NUMBER * 3; i ++)
+        {
+            struct __hessian_value* hv = (struct __hessian_value*)malloc(sizeof(struct __hessian_value));
+            hv->values = (double*) malloc(w * h * sizeof(double));
+            hv->level = i % PARIMITS_LAYERS_NUMBER;
+            hv->group = i / PARIMITS_LAYERS_NUMBER;
+            m_parimit.push_back(hv);
+        }
+#else
         for(int i = 0; i < PARIMITS_LAYERS_NUMBER; i ++)
         {
             struct __hessian_value* hv = (struct __hessian_value*)malloc(sizeof(struct __hessian_value));
             hv->values = (double*) malloc(w * h * sizeof(double));
             hv->level = i;
+            hv->group = 0;
             m_parimit.push_back(hv);
         }
+#endif
     }
 
     u8 image[w * h];
@@ -72,8 +88,13 @@ void SurfObject::updateAllParimitsFeatures()
     for(it = m_parimit.begin(); it != m_parimit.end(); it ++)
     {
         struct __hessian_value* v = *it;
+#if USE_GROUP
+        hessian_value(m_integral, v->values, m_width, m_height, v->level, v->group);
+#else
         hessian_value(m_integral, v->values, m_width, m_height, v->level);
+#endif
 
+#if 0
         for(int i = 0; i < w * h; i ++)
         {
             double vv = v->values[i];
@@ -81,6 +102,7 @@ void SurfObject::updateAllParimitsFeatures()
             image[i] = (u8)vv;
         }
         show_image(image, w, h);
+#endif
     }
 }
 
@@ -112,13 +134,16 @@ void SurfObject::updateCalculateExtremums()
         for(int y = 1; y < h - 1; y ++) {
             for(int x = 1; x < w - 1; x ++)
             {
+                index = y * w + x;
                 if(vm->values[index] < FEATURE_THREHOLD)
                 {
-                    index ++;
                     continue;
                 }
-
-                int is_max = is_hessian_max(vu->values, vm->values, vd->values, x, y, w, h);
+#if USE_GROUP
+                int is_max = is_hessian_max(vu->values, vm->values, vd->values, x, y, w, h, vm->level, vm->group);
+#else
+                int is_max = is_hessian_max(vu->values, vm->values, vd->values, x, y, w, h, vm->level);
+#endif
                 int v = vm->values[index];
                 if(is_max)
                 {
@@ -127,11 +152,10 @@ void SurfObject::updateCalculateExtremums()
                     fv_new->y = y;
                     fv_new->hfv = v;
                     fv_new->level = l;
-
+                    fv_new->group = vm->group;
                     int size = s_level[fv_new->level];
                     double s = (double)size / 9.0f * 1.2f;
                     fv_new->s = s;
-
                     m_feature_values.push_back(fv_new);
 
                 }
@@ -151,9 +175,9 @@ void SurfObject::updateCalculateDirections()
         struct __hessian_fv* fv = *it;
         /// TODO: calculate direction
 
-        int dir = hessian_get_direction(fv->x, fv->y, fv->s, m_integral, m_width, m_height);
+        int dir = hessian_get_direction(fv->x, fv->y, fv->s, fv->level, m_integral, m_width, m_height);
         fv->dir = dir;
-
+        //printf("dir: %d \n", dir);
         //printf("%d ", dir);
     }
 }

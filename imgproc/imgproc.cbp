@@ -59,6 +59,7 @@
 		<Unit filename="hessian.cpp" />
 		<Unit filename="longedge.cpp" />
 		<Unit filename="main.cpp" />
+		<Unit filename="mathmatrix.cpp" />
 		<Unit filename="proc.h" />
 		<Unit filename="proc_utils.cpp" />
 		<Unit filename="process_main.cpp" />

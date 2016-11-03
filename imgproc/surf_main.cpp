@@ -5,8 +5,9 @@
 #include "highgui.h"
 #include "imgcodecs.hpp"
 
-#define TEST_FILE_SURF "/home/hujia/workspace/imgproc/imageprocessing/imgproc/res/tests/test_ben.jpg"
+#define TEST_FILE_SURF "/home/hujia/workspace/imgproc/imageprocessing/imgproc/res/tests/bigben5.jpg"
 #define TEST_FILE_SURF2 "/home/hujia/workspace/imgproc/imageprocessing/imgproc/res/tests/bigben4.jpg"
+#define PAIR_THREHOLD 0
 
 class SurfObject;
 
@@ -16,6 +17,14 @@ extern GaussProc g_gauss;
 
 void load_grey_image_from_file(const char* file, u8** image, int *w, int *h);
 void rotate_point(double centerX, double centerY, double angle, double* x, double* y);
+
+std::vector<struct __surf_match_pair*> vec_match_pair;
+struct __surf_match_pair pairs1[512] = {0};
+struct __surf_match_pair pairs2[512] = {0};
+struct __surf_match_pair pairs_final[512] = {0};
+int __pair_num1 = 0;
+int __pair_num2 = 0;
+int __pair_num_final = 0;
 
 int debug_show_feature(SurfObject* surf, IplImage* frame, int w, int h)
 {
@@ -84,7 +93,44 @@ int debug_show_feature(SurfObject* surf, IplImage* frame, int w, int h)
         //                cvPoint(x + fv->level * 4, y + fv->level * 4), CV_RGB(125,125,125), 1);
     }
 
+
+
     return 0;
+}
+
+void debug_show_pair(IplImage* left, IplImage* right, int w1, int h1, int w2, int h2)
+{
+    int w = w1 + w2;
+    int h = h1 > h2 ? h1 : h2;
+    IplImage* image = cvCreateImage(cvSize(w, h), IPL_DEPTH_8U, 3);
+
+    for(int i = 0; i < h1; i ++)
+    {
+        memcpy(image->imageData + i * w*3, left->imageData + i * w1*3, w1 * 3);
+    }
+
+    for(int i = 0; i < h2; i ++)
+    {
+        memcpy(image->imageData + i * w*3 + w1*3, right->imageData + i * w2*3, w2 * 3);
+    }
+
+
+    //std::vector<struct __surf_match_pair*>::iterator itp = vec_match_pair.begin();
+    //for(; itp != vec_match_pair.end(); itp ++)
+    for(int i = 0; i < __pair_num_final; i ++)
+    {
+        struct __surf_match_pair* pr = &pairs_final[i];
+        cvCircle(image, cvPoint(pr->x1, pr->y1), 5, CV_RGB(255, 0, 0));
+        cvCircle(image, cvPoint(pr->x2 + w1, pr->y2), 5, CV_RGB(255, 0, 0));
+        cvLine(image, cvPoint(pr->x1, pr->y1), cvPoint(pr->x2 + w1, pr->y2), CV_RGB(255, 255, 0));
+    }
+    //printf("%d\n", __pair_num_final);
+
+
+    cvShowImage("show", image);
+
+    cvReleaseImage(&image);
+
 }
 
 int process_go(SurfObject* s_old, u8* image, int w, int h)
@@ -120,14 +166,208 @@ int process_go(SurfObject* s_old, u8* image, int w, int h)
     //debug_show_feature(s_old, pic, w, h);
 
     //debug_show_feature(s_old, p_frame, w, h);
-    //__perf_begin_time();
+    __perf_begin_time();
     /// (5) update description
-    //s_old->updateFeatureDescription();
-   // __perf_end_time();
+    s_old->updateFeatureDescription();
+    __perf_end_time();
+}
+
+void clear_pair()
+{
+    std::vector<struct __surf_match_pair*>::iterator it = vec_match_pair.begin();
+    for(; it != vec_match_pair.end(); it ++)
+    {
+        struct __surf_match_pair* p = *it;
+        free(p);
+    }
+    vec_match_pair.clear();
+    memset(pairs1 , 0, sizeof(struct __surf_match_pair) * 512);
+    memset(pairs2 , 0, sizeof(struct __surf_match_pair) * 512);
+    __pair_num1 = 0;
+    __pair_num2 = 0;
+}
+
+void clear_single_pair(struct __surf_match_pair* pairs, int* __num)
+{
+    memset(pairs, 0, sizeof(struct __surf_match_pair) * 512);
+    *__num = 0;
+}
+
+
+void match_pair(SurfObject* left, SurfObject* right, struct __surf_match_pair* pairs, int* num)
+{
+    clear_single_pair(pairs, num);
+
+    //std::vector<struct __hessian_fv*>::iterator itfv = left->getFeatureValues().begin();
+    //for(; itfv != left->getFeatureValues().end(); itfv ++)
+    for(int i = 0; i < left->m_num_fvs; i ++)
+    {
+        struct __hessian_fv* fv = &(left->m_fvs[i]);
+
+        double maxv = -99999;
+        double minv = 999999;
+        int x1 = 0;
+        int y1 = 0;
+        int x2 = 0;
+        int y2 = 0;
+        double* v1 = fv->fvs;
+        //printf("%p \n", v1);
+
+        //std::vector<struct __hessian_fv*>::iterator itfv2 = right->getFeatureValues().begin();
+        //for(; itfv2 != right->getFeatureValues().end(); itfv2 ++)
+        for(int j = 0; j < right->m_num_fvs; j ++)
+        {
+
+            struct __hessian_fv* fv2 = &(right->m_fvs[j]);
+
+            double* v2 = fv2->fvs;
+            double curv = 0;
+
+
+            for(int p = 0; p < 64; p ++)
+            {
+                curv += (v1[p]-v2[p])*(v1[p]-v2[p]);
+                //printf("%f %f ", v1[p], v2[p]);
+            }
+            curv = sqrt(curv);
+
+            printf("%f ", curv);
+
+            if(curv < minv)
+            {
+                minv = curv;
+                x1 = fv->x;
+                y1 = fv->y;
+                x2 = fv2->x;
+                y2 = fv2->y;
+            }
+        }
+        struct __surf_match_pair* pr = &pairs[*num];
+        pr->x1 = x1;
+        pr->x2 = x2;
+        pr->y1 = y1;
+        pr->y2 = y2;
+        pr->distance = minv;
+
+        (*num) ++;
+            //vec_match_pair.push_back(pr);
+
+    }
+}
+
+int duplicate_pairs(struct __surf_match_pair* pairs1, int num1,
+                    struct __surf_match_pair* pairs2, int num2,
+                    struct __surf_match_pair* pair_final, int* num_final)
+{
+    clear_single_pair(pair_final, num_final);
+    for(int i = 0; i < num1; i ++)
+    {
+        int x1 = pairs1[i].x1;
+        int y1 = pairs1[i].y1;
+        int x2 = pairs1[i].x2;
+        int y2 = pairs1[i].y2;
+
+        for(int j = 0; j < num2; j ++)
+        {
+            if(x1 == pairs2[j].x2 && x2 == pairs2[j].x1 &&
+                y1 == pairs2[j].y2 && y2 == pairs2[j].y1)
+            {
+                pair_final[*num_final].x1 = x1;
+                pair_final[*num_final].y1 = y1;
+                pair_final[*num_final].x2 = x2;
+                pair_final[*num_final].y2 = y2;
+                (*num_final) ++;
+            }
+        }
+    }
 }
 
 int surf_main()
 {
+    int w = 320;
+    int h = 240;
+    CvCapture* p_capture = cvCreateCameraCapture(1);
+
+    cvSetCaptureProperty(p_capture, CV_CAP_PROP_FRAME_WIDTH, w);
+    cvSetCaptureProperty(p_capture, CV_CAP_PROP_FRAME_HEIGHT, h);
+
+    u8* left = 0;
+    u8* left_grey = 0;
+    u8* right_grey = 0;
+
+    IplImage* p_frame = NULL;
+    IplImage* p_show1 = cvCreateImage(cvSize(w, h), IPL_DEPTH_8U, 3);
+
+    s_old = new SurfObject();
+    s_new = new SurfObject();
+
+    left_grey = (u8*)malloc(w * h);
+    right_grey = (u8*)malloc(w * h);
+
+    int time = 0;
+    while(1)
+    {
+        p_frame = cvQueryFrame(p_capture);
+
+        if(!p_frame)
+        {
+            break;
+        }
+
+        char k = cvWaitKey(33);
+        if(k == 27) break;
+
+        if(k == 32)
+        {
+            if(time == 0)
+            {
+                if(left == 0)
+                {
+                    left = (u8*) malloc(w * h * 3);
+                }
+                memcpy(left, p_frame->imageData, w * h * 3);
+                memcpy(p_show1->imageData, p_frame->imageData, w * h * 3);
+
+                rgb2grey(left, left_grey, w, h);
+                process_go(s_old, left_grey, w, h);
+                time = 1;
+            }
+            else if(time == 1)
+            {
+                time = 0;
+
+            }
+        }
+
+        if(left)
+        {
+            rgb2grey((u8*) p_frame->imageData, right_grey, w, h);
+
+
+            process_go(s_new, right_grey, w, h);
+
+            //debug_show_feature(s_old, p_show1, w, h);
+            //debug_show_feature(s_new, p_frame, w, h);
+#if 1
+            match_pair(s_old, s_new, pairs1, &__pair_num1);
+            match_pair(s_new, s_old, pairs2, &__pair_num2);
+            duplicate_pairs(pairs1, __pair_num1, pairs2, __pair_num2, pairs_final, &__pair_num_final);
+#else
+            match_pair(s_old, s_new, pairs_final, &__pair_num_final);
+#endif
+            debug_show_pair(p_show1, p_frame, w, h, w, h);
+
+            delete s_new;
+            s_new = new SurfObject();
+        }
+        if(!left)
+        {
+            cvShowImage("show", p_frame);
+        }
+
+
+    }
+#if 0
     IplImage* p_frame = NULL;
 
 
@@ -158,15 +398,28 @@ int surf_main()
     process_go(s_old, image, w, h);
     process_go(s_new, image2, w2, h2);
 
-    debug_show_feature(s_old, pic, w, h);
-    debug_show_feature(s_new, pic2, w2, h2);
 
+    //debug_show_feature(s_old, pic, w, h);
+    //debug_show_feature(s_new, pic2, w2, h2);
+#if 0
     while(1) {
         cvShowImage("show", pic);
         cvShowImage("show2", pic2);
         char k = cvWaitKey(33);
         if(k == 27) break;
     }
+#endif
 
+#if 1
+    match_pair(s_old, s_new, pairs1, &__pair_num1);
+    match_pair(s_new, s_old, pairs2, &__pair_num2);
+    duplicate_pairs(pairs1, __pair_num1, pairs2, __pair_num2, pairs_final, &__pair_num_final);
+#else
+    match_pair(s_old, s_new, pairs_final, &__pair_num_final);
+#endif
+
+    debug_show_pair(pic, pic2, w, h, w2, h2);
+
+#endif
     return 0;
 }

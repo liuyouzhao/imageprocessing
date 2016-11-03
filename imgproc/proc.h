@@ -158,10 +158,18 @@ struct __hessian_fv
     int level;
     int group;
     int dir;
-    int fvs[HFV_NUM];
+    double fvs[HFV_NUM];
     double s;
 };
 
+struct __surf_match_pair
+{
+    int x1;
+    int y1;
+    int x2;
+    int y2;
+    int distance;
+};
 
 class SurfObject
 {
@@ -181,11 +189,14 @@ public:
     int getWidth()  {   return m_width; }
     int getHeight() {   return m_height; }
     std::vector<struct __hessian_fv*> getFeatureValues() {    return m_feature_values; }
-
+    struct __hessian_fv m_fvs[256];
+    int m_num_fvs;
 
 private:
     std::vector<struct __hessian_value*> m_parimit;
     std::vector<struct __hessian_fv*> m_feature_values;
+
+
 
     u8* m_orignal_image;
 
@@ -209,4 +220,5 @@ void __perf_begin_time();
 void __perf_end_time();
 
 void load_color_image_from_file(const char* file, u8** image, int *w, int *h);
+void rgb2grey(u8* rgb, u8* grey, int w, int h);
 #endif // PROC_H_INCLUDED

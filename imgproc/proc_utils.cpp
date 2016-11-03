@@ -176,6 +176,20 @@ int mat_to_u8arr(cv::Mat src, u8* dst, int w, int h)
     }
 }
 
+void rgb2grey(u8* rgb, u8* grey, int w, int h)
+{
+    for(int i = 0, j = 0; i < w*h*3; i += 3, j ++)
+    {
+        uchar r = rgb[i];
+        uchar g = rgb[i + 1];
+        uchar b = rgb[i + 2];
+        int gr = 0.30 * r + 0.59 * g + 0.11 * b;
+        gr = gr > 255 ? 255 : gr;
+        grey[j] = gr;
+    }
+
+}
+
 void load_grey_image_from_file(const char* file, u8** image, int *w, int *h)
 {
     IplImage* pic = cvLoadImage(file);

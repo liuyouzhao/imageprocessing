@@ -14,10 +14,10 @@ int hessian_value(u32* integral, double* values, int w, int h, int level);
 int is_hessian_max(double* vu, double* vm, double* vd, int x, int y, int w, int h, int l);
 #endif
 int hessian_get_direction(int x, int y, double s, int l, u32* integral, int w, int h);
-int hessian_descript(u8* image, int w, int h, int x, int y, int dir, int* out, double s);
+int hessian_descript(u32* integral, u8* image, int w, int h, int x, int y, int dir, double* out, double s);
 
 extern HaarlikeProc g_haarlike;
-extern int s_level[6];
+extern int s_level[5];
 
 /**
   size-level parimit
@@ -120,7 +120,6 @@ void SurfObject::updateCalculateExtremums()
     }
     m_feature_values.clear();
 
-
     std::vector<struct __hessian_value*>::iterator it;
     it = m_parimit.begin() + 1;
     for(int l = 1; l < PARIMITS_LAYERS_NUMBER - 1; l ++, it ++)
@@ -156,6 +155,7 @@ void SurfObject::updateCalculateExtremums()
                     int size = s_level[fv_new->level];
                     double s = (double)size / 9.0f * 1.2f;
                     fv_new->s = s;
+                    //printf("[%d %d ]\n", fv_new->x, fv_new->y);
                     m_feature_values.push_back(fv_new);
 
                 }
@@ -170,6 +170,7 @@ void SurfObject::updateCalculateDirections()
 {
     std::vector<struct __hessian_fv*>::iterator it;
     it = m_feature_values.begin();
+
     for( ; it != m_feature_values.end(); it ++ )
     {
         struct __hessian_fv* fv = *it;
@@ -177,9 +178,12 @@ void SurfObject::updateCalculateDirections()
 
         int dir = hessian_get_direction(fv->x, fv->y, fv->s, fv->level, m_integral, m_width, m_height);
         fv->dir = dir;
+
+
         //printf("dir: %d \n", dir);
-        //printf("%d ", dir);
+        //printf("{%d %d}", fv->x, fv->y);
     }
+
 }
 
 void SurfObject::updateFeatureDescription()
@@ -187,21 +191,22 @@ void SurfObject::updateFeatureDescription()
     /// TODO: calculate haar waves hessian description
     std::vector<struct __hessian_fv*>::iterator it;
     it = m_feature_values.begin();
+    int n = 0;
     for( ; it != m_feature_values.end(); it ++ )
     {
         struct __hessian_fv* fv = *it;
-        /// TODO: calculate direction
-        printf("%d %d %d %d \n", fv->x, fv->y, fv->dir, fv->level);
-        int size = s_level[fv->level];
-        double s = (double)size / 9.0f * 1.2f;
-        hessian_descript(m_orignal_image, m_width, m_height, fv->x, fv->y, fv->dir, fv->fvs, s);
+        //printf("(%d %d)\n", fv->x, fv->y);
+        hessian_descript(m_integral, m_orignal_image, m_width, m_height, fv->x, fv->y, fv->dir, fv->fvs, fv->s);
 #if 0
         for(int i = 0; i < 64; i ++)
         {
-            printf("%d ", fv->fvs[i]);
+            printf("%f ", fv->fvs[i]);
         }
         printf("\n\n");
 #endif
+        memcpy(&(m_fvs[n]), fv, sizeof(struct __hessian_fv));
+        n ++;
     }
-
+    m_num_fvs = n;
 }
+

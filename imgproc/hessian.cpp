@@ -8,19 +8,21 @@
 
 extern HaarlikeProc g_haarlike;
 
-
+void rotate_point(double centerX, double centerY, double angle, double* x, double* y);
 int hessian_calculate_dir_haar_addons(int x, int y, int radio,
-                                int angle_from, int angle_to,
-                                u32* integral, int w, int h, int s, int l);
+                                      int angle_from, int angle_to,
+                                      u32* integral, int w, int h, int s, int l);
 #if USE_GROUP
-int s_level[3][5] = {
+int s_level[3][5] =
+{
     //9, 15, 21, 27, 33, 39, 45, 51, 57
     {9, 15, 21, 27, 33},
     {15, 27, 39, 51, 63},
     {27, 51, 75, 99, 123}
 };
 #else
-int s_level[5] = {
+int s_level[5] =
+{
     //9, 15, 21, 27, 33, 39, 45, 51, 57
     9, 15, 21, 27, 33
 };
@@ -47,7 +49,8 @@ Linear Vertical
 
 */
 static int haarlike_linear_vert(u32 *integ, int w, int h, int x, int y,
-                                    int level) {
+                                int level)
+{
 
     int p1357x, p2467x;
     int p12y, p34y, p56y, p78y;
@@ -73,8 +76,8 @@ static int haarlike_linear_vert(u32 *integ, int w, int h, int x, int y,
     ii8 = integ[p78y * w + p2467x];
 
     fv =      (ii1 + ii4 - ii2 - ii3) +
-                            (-2)*(ii3 + ii6 - ii4 - ii5) +
-                                 (ii5 + ii8 - ii6 - ii7);
+              (-2)*(ii3 + ii6 - ii4 - ii5) +
+              (ii5 + ii8 - ii6 - ii7);
 
 
     return fv;
@@ -95,7 +98,8 @@ Linear Horizon
     -------------------------
 
 */
-static int haarlike_linear_horizon(u32 *integ, int w, int h, int x, int y, int level) {
+static int haarlike_linear_horizon(u32 *integ, int w, int h, int x, int y, int level)
+{
 
     int p15x, p26x, p37x, p48x;
     int p1234y, p5678y;
@@ -121,8 +125,8 @@ static int haarlike_linear_horizon(u32 *integ, int w, int h, int x, int y, int l
     ii8 = integ[p5678y * w + p48x];
 
     fv = (ii1 + ii6 - ii2 - ii5) +
-                            (-2) * (ii2 + ii7 - ii3 - ii6) +
-                            (ii3 + ii8 - ii4 - ii7);
+         (-2) * (ii2 + ii7 - ii3 - ii6) +
+         (ii3 + ii8 - ii4 - ii7);
 
 
     return fv;
@@ -151,7 +155,8 @@ static int haarlike_linear_horizon(u32 *integ, int w, int h, int x, int y, int l
 
     Left+Top is the position focusing
     */
-static int haarlike_point(u32 *integ, int w, int h, int x, int y, int level) {
+static int haarlike_point(u32 *integ, int w, int h, int x, int y, int level)
+{
 
     int p_1_3_9_11_x, p_2_4_10_12_x, p_5_7_13_15_x, p_6_8_14_16_x;
     int p_1_2_5_6_y, p_3_4_7_8_y, p_9_10_13_14_y, p_11_12_15_16_y;
@@ -189,7 +194,7 @@ static int haarlike_point(u32 *integ, int w, int h, int x, int y, int level) {
 
 
     fv = (1) * (ii4 + ii1 - ii2 - ii3) + (-1) * (ii8 + ii5 - ii6 - ii7) +
-                                    (-1) * (ii12 + ii9 - ii11 - ii10) + (1) * (ii16 + ii13 - ii14 - ii15);
+         (-1) * (ii12 + ii9 - ii11 - ii10) + (1) * (ii16 + ii13 - ii14 - ii15);
 
     return fv;
 }
@@ -211,7 +216,8 @@ Edge Vertical
     -------------------------
 
 */
-static int haarlike_edge_vert(u32 *integ, int w, int h, int x, int y, int level) {
+static int haarlike_edge_vert(u32 *integ, int w, int h, int x, int y, int level)
+{
 
     int p135x, p246x;
     int p12y, p34y, p56y;
@@ -275,7 +281,8 @@ Edge Horizon
     -------------------------
 
 */
-static int haarlike_edge_horizon(u32 *integ, int w, int h, int x, int y, int level) {
+static int haarlike_edge_horizon(u32 *integ, int w, int h, int x, int y, int level)
+{
 
     int p14x, p25x, p36x;
     int p123y, p456y;
@@ -467,17 +474,17 @@ static double get_angle(int x, int y)
 
 
 }
+static double _opera[25] =
+{
+    1, 4, 7, 4, 1,
+    4, 16, 26, 16, 4,
+    7, 26, 41, 26, 7,
+    4, 16, 26, 16, 4,
+    1, 4, 7, 4, 1
+};
 
 int hessian_get_direction(int x, int y, double s, int l, u32* integral, int w, int h)
 {
-    static double _opera[25] =
-    {
-        1, 4, 7, 4, 1,
-        4, 16, 26, 16, 4,
-        7, 26, 41, 26, 7,
-        4, 16, 26, 16, 4,
-        1, 4, 7, 4, 1
-    };
 
     int r = (int)(6.0f * s);
     int d = 2.0f * r;
@@ -622,7 +629,7 @@ int hessian_get_direction(int x, int y, double s, int l, u32* integral, int w, i
     for( ; an < 360.0f; an += HESSIAN_ANGLE_JUMP )
     {
         int val = hessian_calculate_dir_haar_addons(x, y, HESSIAN_RADIO * s,
-                            an, an + HESSIAN_ANGLE, integral, w, h, HESSIAN_HAAR_SIZE * s, l);
+                  an, an + HESSIAN_ANGLE, integral, w, h, HESSIAN_HAAR_SIZE * s, l);
         if(max_value < val)
         {
             max_value = val;
@@ -633,7 +640,172 @@ int hessian_get_direction(int x, int y, double s, int l, u32* integral, int w, i
 #endif;
 }
 
+double weightGaussian( const double x, const double y, const double sigma )
+{
 
+    // x is the distance
+    double e2 = exp(-(x*x + y*y)/(2*sigma*sigma));
+    return e2*(0.5*PI*sigma);
+
+}
+
+int hessian_descript(u32* integral, u8* image, int w, int h, int x, int y, int dir, double* out, double s)
+{
+    int windowSize = (int)(20.0f * s);
+    int blockSize = (int)(5.0f * s);
+
+    int hWinSize = windowSize / 2;
+    int hBloSize = blockSize / 2;
+
+    int haarSize = (int)(2.0f * s);
+    haarSize = (haarSize % 2) != 0 ? haarSize + 1 : haarSize;
+
+    double angle = (double)dir / 360.0f * 2 * 3.1415926;
+
+    double fv_array[windowSize * windowSize][2];
+
+    for(int i = 0; i < windowSize * windowSize; i ++)
+    {
+        fv_array[i][0] = 0.0f;
+        fv_array[i][1] = 0.0f;
+    }
+
+
+    int n = 0;
+    double values[16][4];
+    double sigma = 3.3 * s;
+
+    for(int i = 0; i < 16; i ++)
+    {
+        values[i][0] = 0.0f;
+        values[i][1] = 0.0f;
+        values[i][2] = 0.0f;
+        values[i][3] = 0.0f;
+    }
+
+
+
+    int k = 0;
+    u8* rectImage = (u8*)malloc(windowSize * windowSize);
+
+    for(int i = -hWinSize; i < hWinSize; i ++)
+    {
+        for(int j = -hWinSize; j < hWinSize; j ++)
+        {
+            double _j = (double)j;
+            double _i = (double)i;
+
+            rotate_point(0.0f, 0.0f, angle, &_j, &_i);
+
+            double _x = (double)x + _j;
+            double _y = (double)y + _i;
+
+            rectImage[k] = image[(int)_y * w + (int)_x];
+            k ++;
+        }
+    }
+
+    //show_image(rectImage, windowSize, windowSize);
+
+    u32* integral_rect = (u32*)malloc(sizeof(u32) * windowSize * windowSize);
+    g_haarlike.haarlike_integral(rectImage, integral_rect, windowSize, windowSize);
+
+    free(rectImage);
+
+    for(int i = 0; i < windowSize; i ++)
+    {
+        for(int j = 0; j < windowSize; j ++)
+        {
+            int x = j;
+            int y = i;
+            double dx = (double)haarlike_edge_horizon(integral_rect, windowSize, windowSize, x, y, haarSize);
+            double dy = (double)haarlike_edge_vert(integral_rect, windowSize, windowSize, x, y, haarSize);
+
+            if(dx != 0 || dy != 0)
+            {
+                dx = dx / sqrt(dx*dx + dy*dy);
+                dy = dy / sqrt(dx*dx + dy*dy);
+            }
+
+            double gaussw = weightGaussian((double)j, (double)i, sigma);
+
+            gaussw = 1.0f;
+            dx = dx * gaussw;
+            dy = dy * gaussw;
+
+            values[(i) / blockSize * 4 + (j) / blockSize][0] += dx;
+            values[(i) / blockSize * 4 + (j) / blockSize][1] += dy;
+            values[(i) / blockSize * 4 + (j) / blockSize][2] += fabs(dx);
+            values[(i) / blockSize * 4 + (j) / blockSize][3] += fabs(dy);
+
+        }
+    }
+    free(integral_rect);
+
+    for(int i = 0; i < 16; i ++)
+    {
+        out[i * 4] = values[i][0];
+        out[i * 4 + 1] = values[i][1];
+        out[i * 4 + 2] = values[i][2];
+        out[i * 4 + 3] = values[i][3];
+    }
+#if 0
+
+    n = 0;
+
+    for(int i = 0; i < windowSize; i += blockSize)
+    {
+        for(int j = 0; j < windowSize; j += blockSize)
+        {
+            double sigmaDx = 0;
+            double sigmaDy = 0;
+            double sigmaDx2 = 0;
+            double sigmaDy2 = 0;
+            for(int k = i; k < i + blockSize; k ++)
+            {
+                for(int p = j; p < j + blockSize; p ++)
+                {
+                    double dx = fv_array[k * windowSize + p][0];
+                    double dy = fv_array[k * windowSize + p][1];
+
+                    sigmaDx += dx;
+                    sigmaDy += dy;
+
+                    dx = dx < 0.0f ? -dx : dx;
+                    dy = dy < 0.0f ? -dy : dy;
+
+                    sigmaDx2 += dx;
+                    sigmaDy2 += dy;
+
+                }
+            }
+
+
+            out[n * 4] = sigmaDx;
+            out[n * 4 + 1] = sigmaDy;
+            out[n * 4 + 2] = sigmaDx2;
+            out[n * 4 + 3] = sigmaDy2;
+
+
+            n ++;
+
+        }
+    }
+#endif
+    double norm = 0.0f;
+    for(int i = 0; i < 64; i ++)
+    {
+        norm += out[i] * out[i];
+    }
+    norm = sqrt(norm);
+    for(int i = 0; i < 64; i ++)
+    {
+        out[i] = out[i] / norm;
+    }
+
+}
+
+#if 0
 int hessian_descript(u8* image, int w, int h, int x, int y, int dir, int* out, double s)
 {
     int block = HESSIAN_DESCRIPT_BLOCK * s;
@@ -701,9 +873,9 @@ int hessian_descript(u8* image, int w, int h, int x, int y, int dir, int* out, d
                     int* fv = 0;
                     int* fv2 = 0;
                     g_haarlike.haarlike_edge_horizon(region_integral, block, block, block, block,
-                                            xj, yi, HESSIAN_DESCRIPT_HAAR_SIZE*s, HESSIAN_DESCRIPT_HAAR_SIZE*s, &fv);
+                                                     xj, yi, HESSIAN_DESCRIPT_HAAR_SIZE*s, HESSIAN_DESCRIPT_HAAR_SIZE*s, &fv);
                     g_haarlike.haarlike_edge_vert(region_integral, block, block, block, block,
-                                            xj, yi, HESSIAN_DESCRIPT_HAAR_SIZE*s, HESSIAN_DESCRIPT_HAAR_SIZE*s, &fv2);
+                                                  xj, yi, HESSIAN_DESCRIPT_HAAR_SIZE*s, HESSIAN_DESCRIPT_HAAR_SIZE*s, &fv2);
 
                     dx += fv[0];
                     _dx += fv[0] > 0 ? fv[0] : -fv[0];
@@ -733,4 +905,5 @@ int hessian_descript(u8* image, int w, int h, int x, int y, int dir, int* out, d
     free(region_integral);
     return 0;
 }
+#endif
 

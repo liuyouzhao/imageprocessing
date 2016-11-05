@@ -1,0 +1,88 @@
+Surf:
+(0) Hessian matrix
+
+L(x,y,a) = G(x, y, a) * I(x, y)
+G is gauss function
+
+
+H(x, a) = | Lxx(x, a)  Lxy(x, a) |
+          | Lxy(x, a), Lyy(x, a) |
+
+Lxx is G(x, y, a)''
+
+
+r-Lxx  -Lxy
+-Lxy,   r-Lyy
+= r-Lxx + Lxy(r-Lyy), 0
+  -Lxy                r-Lyy
+(r-Lxx+rLxy-LxyLyy)*(r-Lyy) = 0
+...
+r = Lxx*Lyy - (0.9*Lxy)^2
+
+
+(1) Calculate Gauss feature values
+
+Why use Haar-like template?
+
+For instance, a 5x5 gauss core:
+|---------------|
+ 1, 4, 7, 4, 1,
+ 4, 16, 26, 16, 4,
+ 7, 26, 41, 26, 7,
+ 4, 16, 26, 16, 4,
+ 1, 4, 7, 4, 1
+|---------------|
+
+Approximate:
+|---------------|
+0, 0, 0, 0, 0,
+0, 1, 1, 1, 0,
+0, 1, 1, 1, 0,
+0, 1, 1, 1, 0,
+0, 0, 0, 0, 0,
+|---------------|
+
+Linear Haar-like Vert+Horizon:
+|---------------|
+0, 1, 1, 1, 0,
+0, 1, 1, 1, 0,
+0, 1, 1, 1, 0,
+0, 1, 1, 1, 0,
+0, 1, 1, 1, 0
+|---------------|
+0, 0, 0, 0, 0,
+1, 1, 1, 1, 1,
+1, 1, 1, 1, 1,
+1, 1, 1, 1, 1,
+0, 0, 0, 0, 0,
+|---------------|
+
+Then use diffrent size of vert+horizon haar-like template to do convolution
+getting all features in pyramids
+size: 9x9, 15x15, 21x21, 27x27, 33x33
+
+(2) Max values
+9x9 [15x15] 21x21
+
+15x15 point is max is 27s values during 3 layers
+
+
+
+(3) Calculate all main directions
+|---------------|
+|000111111110000|
+|011111111111110|
+|011111111111110|
+|111111111111111|
+|111111111111111|
+|011111111111110|
+|011111111111110|
+|000111111110000|
+
+all haar directions statistics.
+
+
+(4) Descriptor
+20s, 5s, blocks statistics based on directions.
+
+

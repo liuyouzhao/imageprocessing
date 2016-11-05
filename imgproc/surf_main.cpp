@@ -5,8 +5,8 @@
 #include "highgui.h"
 #include "imgcodecs.hpp"
 
-#define TEST_FILE_SURF "/home/hujia/workspace/imgproc/imageprocessing/imgproc/res/tests/bigben5.jpg"
-#define TEST_FILE_SURF2 "/home/hujia/workspace/imgproc/imageprocessing/imgproc/res/tests/bigben4.jpg"
+#define TEST_FILE_SURF "/home/hujia/workspace/imgproc/imageprocessing/imgproc/res/tests/teste.jpg"
+#define TEST_FILE_SURF2 "/home/hujia/workspace/imgproc/imageprocessing/imgproc/res/tests/teste2.jpg"
 #define PAIR_THREHOLD 0
 
 class SurfObject;
@@ -231,7 +231,7 @@ void match_pair(SurfObject* left, SurfObject* right, struct __surf_match_pair* p
             }
             curv = sqrt(curv);
 
-            printf("%f ", curv);
+            //printf("%f ", curv);
 
             if(curv < minv)
             {
@@ -284,6 +284,7 @@ int duplicate_pairs(struct __surf_match_pair* pairs1, int num1,
 
 int surf_main()
 {
+#if 1
     int w = 320;
     int h = 240;
     CvCapture* p_capture = cvCreateCameraCapture(1);
@@ -355,6 +356,7 @@ int surf_main()
 #else
             match_pair(s_old, s_new, pairs_final, &__pair_num_final);
 #endif
+            get_matrix_by_points(pairs_final, __pair_num_final);
             debug_show_pair(p_show1, p_frame, w, h, w, h);
 
             delete s_new;
@@ -367,6 +369,9 @@ int surf_main()
 
 
     }
+
+#endif // 0
+
 #if 0
     IplImage* p_frame = NULL;
 
@@ -399,9 +404,9 @@ int surf_main()
     process_go(s_new, image2, w2, h2);
 
 
-    //debug_show_feature(s_old, pic, w, h);
-    //debug_show_feature(s_new, pic2, w2, h2);
-#if 0
+    debug_show_feature(s_old, pic, w, h);
+    debug_show_feature(s_new, pic2, w2, h2);
+#if 1
     while(1) {
         cvShowImage("show", pic);
         cvShowImage("show2", pic2);
@@ -409,7 +414,7 @@ int surf_main()
         if(k == 27) break;
     }
 #endif
-
+    return 0;
 #if 1
     match_pair(s_old, s_new, pairs1, &__pair_num1);
     match_pair(s_new, s_old, pairs2, &__pair_num2);
@@ -417,8 +422,13 @@ int surf_main()
 #else
     match_pair(s_old, s_new, pairs_final, &__pair_num_final);
 #endif
+    while(1)
+    {
+        debug_show_pair(pic, pic2, w, h, w2, h2);
+        char k = cvWaitKey(33);
+        if(k == 27) break;
+    }
 
-    debug_show_pair(pic, pic2, w, h, w2, h2);
 
 #endif
     return 0;

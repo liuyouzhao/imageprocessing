@@ -221,4 +221,5 @@ void __perf_end_time();
 
 void load_color_image_from_file(const char* file, u8** image, int *w, int *h);
 void rgb2grey(u8* rgb, u8* grey, int w, int h);
+void get_matrix_by_points(struct __surf_match_pair* pairs, int num);
 #endif // PROC_H_INCLUDED
